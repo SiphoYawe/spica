@@ -4,18 +4,20 @@ Spica is an intelligent workflow automation platform for Neo N3 blockchain, powe
 
 ## Features
 
-- 🤖 **Natural Language Workflow Creation** - Describe DeFi strategies in plain English
-- 🔗 **Neo N3 Integration** - Execute swaps, staking, and transfers on Neo testnet
-- 💳 **x402 Payments** - Pay-per-deployment using USDC on Base Sepolia
-- 📊 **Visual Workflow Builder** - See and edit your workflows as interactive graphs
-- ⚡ **Real-time Execution** - Monitor triggers and execute actions automatically
+- **Natural Language Workflow Creation** - Describe DeFi strategies in plain English
+- **Neo N3 Integration** - Execute swaps, staking, and transfers on Neo testnet
+- **x402 Payments** - Pay-per-deployment using USDC on Base Sepolia
+- **Visual Workflow Builder** - See and edit your workflows as interactive graphs
+- **Real-time Execution** - Monitor triggers and execute actions automatically
 
 ## Tech Stack
 
 ### Frontend
-- **React 18** with TypeScript
-- **Vite** for fast development and building
-- **React Flow** for graph visualization
+- **Next.js 16** with React 19 and TypeScript
+- **Tailwind CSS v4** for styling
+- **shadcn/ui** component library
+- **ReactFlow** for graph visualization
+- **Zustand** for state management
 
 ### Backend
 - **FastAPI** with Python 3.11+
@@ -71,7 +73,7 @@ docker-compose up -d
 ```
 
 The application will be available at:
-- **Frontend:** http://localhost:5173
+- **Frontend:** http://localhost:3000
 - **Backend API:** http://localhost:8000
 - **API Documentation:** http://localhost:8000/docs
 
@@ -120,24 +122,30 @@ cd frontend
 # Install dependencies
 npm install
 
-# Run development server
+# Run development server (with Turbopack)
 npm run dev
 ```
 
-Frontend will be available at http://localhost:5173
+Frontend will be available at http://localhost:3000
 
 ## Project Structure
 
 ```
 spica/
-├── frontend/              # React + TypeScript frontend
+├── frontend/              # Next.js 16 + TypeScript frontend
 │   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── contexts/      # React contexts for state
-│   │   ├── hooks/         # Custom React hooks
+│   │   ├── app/           # Next.js App Router pages
+│   │   │   ├── layout.tsx # Root layout with providers
+│   │   │   ├── page.tsx   # Main workflow builder page
+│   │   │   └── globals.css# Tailwind CSS styles
+│   │   ├── components/
+│   │   │   ├── layout/    # App layout components
+│   │   │   ├── ui/        # shadcn/ui components
+│   │   │   └── workflow/  # Workflow-specific components
+│   │   ├── stores/        # Zustand state stores
 │   │   ├── api/           # API client
-│   │   ├── types/         # TypeScript types
-│   │   └── App.tsx        # Main app component
+│   │   ├── hooks/         # Custom React hooks
+│   │   └── lib/           # Utility functions
 │   ├── Dockerfile         # Frontend container
 │   └── package.json
 │
@@ -150,6 +158,7 @@ spica/
 │   │   ├── services/      # Business logic
 │   │   ├── models/        # Data models
 │   │   └── utils/         # Utilities
+│   ├── tests/             # Backend test suite
 │   ├── Dockerfile         # Backend container
 │   └── requirements.txt
 │
@@ -247,16 +256,16 @@ pytest --cov=app --cov-report=html
 pytest tests/test_parser.py -v
 ```
 
-### Frontend Tests
+### Frontend
 
 ```bash
 cd frontend
 
-# Run tests
-npm test
+# Run linting
+npm run lint
 
-# Run with coverage
-npm run test:coverage
+# Build for production
+npm run build
 ```
 
 ## Troubleshooting
@@ -310,13 +319,13 @@ NEO_TESTNET_RPC=https://testnet2.neo.coz.io:443
 **Problem:** API calls fail with CORS error
 - Ensure backend is running and accessible
 - Check CORS configuration in `backend/app/main.py`
-- Verify `VITE_API_URL` in `.env` matches backend URL
+- Verify `NEXT_PUBLIC_API_URL` in `.env.local` matches backend URL
 
 ## Development Workflow
 
 ### Making Changes
 
-1. **Frontend changes** - Vite hot reload activates automatically
+1. **Frontend changes** - Next.js with Turbopack hot reload activates automatically
 2. **Backend changes** - Uvicorn auto-reloads on file changes
 3. **Both use Docker volumes** for live code updates
 
@@ -339,6 +348,18 @@ npm install new-package
 
 # Rebuild frontend container
 docker-compose up --build frontend
+```
+
+### Adding shadcn/ui Components
+
+```bash
+cd frontend
+
+# Add a new shadcn/ui component
+npx shadcn@latest add <component-name>
+
+# Example: add a calendar component
+npx shadcn@latest add calendar
 ```
 
 ## Production Deployment
@@ -386,10 +407,9 @@ MIT License - See LICENSE file for details
 - **SpoonOS** - AI agent framework
 - **Neo N3** - Blockchain platform
 - **x402 Protocol** - Payment standard
-- **React Flow** - Graph visualization
+- **ReactFlow** - Graph visualization
+- **shadcn/ui** - UI component library
 
 ---
 
 **Built for the Neo N3 + SpoonOS Hackathon**
-
-Happy building! 🚀
