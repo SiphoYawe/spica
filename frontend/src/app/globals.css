@@ -84,11 +84,12 @@
   --radius-xl: 12px;
 }
 
-:root {
+:root,
+.dark {
   --radius: 8px;
 
-  /* ========== DARK THEME (Default) ========== */
-  /* Scientific instrument aesthetic - dark by default */
+  /* ========== DARK THEME ONLY ========== */
+  /* Scientific instrument aesthetic - dark mode is the only mode */
 
   /* Surface hierarchy: darkest to lightest */
   --background: #050508;
@@ -175,63 +176,6 @@
   --glow-spica-strong: 0 0 20px rgba(0, 255, 72, 0.3), 0 0 60px rgba(0, 255, 72, 0.1);
 }
 
-.light {
-  /* Light Theme - Clean laboratory */
-  --background: #FAFAFA;
-  --foreground: #0C0C10;
-  --card: #FFFFFF;
-  --card-foreground: #0C0C10;
-  --popover: #FFFFFF;
-  --popover-foreground: #0C0C10;
-
-  --primary: #00CC3A;
-  --primary-foreground: #FFFFFF;
-
-  --secondary: #F0F0F4;
-  --secondary-foreground: #3C3C44;
-
-  --muted: #F5F5F8;
-  --muted-foreground: #6B6B78;
-
-  --accent: #E6FFF0;
-  --accent-foreground: #00661D;
-
-  --destructive: #DC2626;
-
-  --border: #E0E0E8;
-  --input: #E0E0E8;
-  --ring: #00CC3A;
-
-  --canvas: #F5F5F8;
-  --canvas-grid: #E0E0E8;
-
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #0C0C10;
-  --sidebar-primary: #00CC3A;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #E6FFF0;
-  --sidebar-accent-foreground: #00661D;
-  --sidebar-border: #E0E0E8;
-  --sidebar-ring: #00CC3A;
-
-  /* Node colors adjusted for light - slightly deeper for contrast */
-  --node-trigger: #D97706;
-  --node-trigger-bg: rgba(245, 158, 11, 0.12);
-  --node-trigger-border: rgba(245, 158, 11, 0.4);
-  --node-swap: #0891B2;
-  --node-swap-bg: rgba(6, 182, 212, 0.12);
-  --node-swap-border: rgba(6, 182, 212, 0.4);
-  --node-stake: #059669;
-  --node-stake-bg: rgba(16, 185, 129, 0.12);
-  --node-stake-border: rgba(16, 185, 129, 0.4);
-  --node-transfer: #2563EB;
-  --node-transfer-bg: rgba(59, 130, 246, 0.12);
-  --node-transfer-border: rgba(59, 130, 246, 0.4);
-
-  --glow-spica: 0 0 15px rgba(0, 204, 58, 0.1);
-  --glow-spica-strong: 0 0 25px rgba(0, 204, 58, 0.2);
-}
-
 /* ============================================
    BASE STYLES
    ============================================ */
@@ -267,24 +211,41 @@
    ============================================ */
 
 @layer base {
+  /* Increased base font size for better readability */
+  html {
+    font-size: 16px;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
   }
 
   h1 {
-    @apply text-3xl;
+    @apply text-4xl;
   }
 
   h2 {
-    @apply text-2xl;
+    @apply text-3xl;
   }
 
   h3 {
-    @apply text-xl;
+    @apply text-2xl;
   }
 
   h4 {
+    @apply text-xl;
+  }
+
+  h5 {
     @apply text-lg;
+  }
+
+  h6 {
+    @apply text-base;
+  }
+
+  p, span, div, li, a {
+    @apply text-base;
   }
 
   code, kbd, pre {
@@ -433,11 +394,11 @@
 }
 
 .workflow-node-icon {
-  @apply w-7 h-7 rounded flex items-center justify-center text-xs font-bold;
+  @apply w-8 h-8 rounded flex items-center justify-center text-sm font-bold;
 }
 
 .workflow-node-title {
-  @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+  @apply text-sm font-medium uppercase tracking-wider text-muted-foreground;
 }
 
 /* Node content */
@@ -446,11 +407,11 @@
 }
 
 .workflow-node-label {
-  @apply text-sm font-medium text-foreground;
+  @apply text-base font-medium text-foreground;
 }
 
 .workflow-node-meta {
-  @apply text-xs text-muted-foreground font-mono;
+  @apply text-sm text-muted-foreground font-mono;
 }
 
 /* Node types */
@@ -663,7 +624,7 @@
 }
 
 .panel-title {
-  @apply text-sm font-semibold tracking-wide;
+  @apply text-base font-semibold tracking-wide;
 }
 
 .panel-content {

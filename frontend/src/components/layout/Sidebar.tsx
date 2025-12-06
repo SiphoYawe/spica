@@ -70,8 +70,8 @@ export function Sidebar() {
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex h-full flex-col">
-        {/* Logo & Toggle */}
-        <div className="flex h-28 items-center justify-between border-b border-border px-4">
+        {/* Logo */}
+        <div className="flex h-28 items-center justify-center border-b border-border px-4">
           <div className="relative h-24 w-24">
             <Image
               src="/spica-logo.svg"
@@ -81,19 +81,6 @@ export function Sidebar() {
               priority
             />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={toggleSidebar}
-            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {sidebarOpen ? (
-              <PanelLeftClose className="h-4 w-4" />
-            ) : (
-              <PanelLeftOpen className="h-4 w-4" />
-            )}
-          </Button>
         </div>
 
         {/* Node Palette */}
