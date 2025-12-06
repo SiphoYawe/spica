@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend - FastAPI + SpoonOS
   backend:
@@ -41,21 +39,23 @@ services:
     networks:
       - spica-network
 
-  # Frontend - React + Vite
+  # Frontend - Next.js
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: spica-frontend
     ports:
-      - "5173:5173"
+      - "3000:3000"
     volumes:
       # Mount frontend code for hot reload
       - ./frontend:/app
       - /app/node_modules  # Prevent node_modules override
+      - /app/.next  # Prevent .next override
     environment:
-      - VITE_API_URL=http://localhost:8000
-    command: npm run dev -- --host 0.0.0.0
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - WATCHPACK_POLLING=true  # Enable polling for Docker file watching
+    command: npm run dev
     restart: unless-stopped
     networks:
       - spica-network
