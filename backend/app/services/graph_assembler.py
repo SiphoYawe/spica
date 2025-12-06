@@ -462,6 +462,7 @@ class GraphAssembler:
             workflow_id=workflow_id,
             workflow_name=workflow_spec.name,
             workflow_description=workflow_spec.description,
+            workflow_spec=workflow_spec,
             react_flow=react_flow,
             state_graph_config=state_graph_config,
         )

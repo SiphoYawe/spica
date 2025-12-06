@@ -34,7 +34,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import WorkflowInput from '../WorkflowInput'
@@ -464,14 +464,12 @@ describe('WorkflowInput', () => {
   describe('Race Condition Prevention', () => {
     it('should cancel previous request when submitting again', async () => {
       const user = userEvent.setup()
-      let firstRequestResolved = false
       let secondRequestCalled = false
 
       vi.mocked(apiClient.parseWorkflow).mockImplementation(() => {
         if (!secondRequestCalled) {
           return new Promise((resolve) => {
             setTimeout(() => {
-              firstRequestResolved = true
               resolve({
                 success: true,
                 data: { success: true, workflow_spec: {} },

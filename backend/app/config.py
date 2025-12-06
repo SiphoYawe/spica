@@ -3,7 +3,7 @@ Application configuration using Pydantic Settings
 """
 
 from pydantic_settings import BaseSettings
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from typing import Optional
 import re
 
@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     app_name: str = "Spica"
     environment: str = "development"
     debug: bool = True
+    spica_demo_mode: bool = False  # Enable demo mode to bypass x402 payments
 
     # LLM Configuration
     openai_api_key: str = Field(
@@ -35,8 +36,8 @@ class Settings(BaseSettings):
 
     # x402 Payment Configuration
     x402_facilitator_url: Optional[str] = None
-    x402_receiver_address: str = Field(
-        ...,
+    x402_receiver_address: Optional[str] = Field(
+        None,
         min_length=1,
         description="Ethereum address to receive x402 payments"
     )
@@ -64,16 +65,28 @@ class Settings(BaseSettings):
 
     @field_validator("x402_receiver_address")
     @classmethod
-    def validate_ethereum_address(cls, v: str) -> str:
+    def validate_ethereum_address(cls, v: Optional[str]) -> Optional[str]:
         """Validate Ethereum address format"""
-        if not v:
-            raise ValueError("x402_receiver_address is required")
+        if v is None:
+            return None
         # Ethereum address: 0x followed by 40 hex characters
         if not re.match(r"^0x[a-fA-F0-9]{40}$", v):
             raise ValueError(
                 "Invalid Ethereum address format. Must be 0x followed by 40 hex characters."
             )
         return v
+
+    @model_validator(mode='after')
+    def validate_production_requirements(self) -> 'Settings':
+        """Validate that x402 configuration is complete when not in demo mode"""
+        if not self.spica_demo_mode:
+            # Production mode requires x402 configuration
+            if not self.x402_receiver_address:
+                raise ValueError(
+                    "x402_receiver_address is required when spica_demo_mode is False. "
+                    "Either set X402_RECEIVER_ADDRESS or enable SPICA_DEMO_MODE=true"
+                )
+        return self
 
     class Config:
         env_file = ".env"

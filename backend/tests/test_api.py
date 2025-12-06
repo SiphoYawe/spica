@@ -306,14 +306,21 @@ class TestOpenAPIDocumentation:
         schemas = schema["components"]["schemas"]
 
         # Our Pydantic models should be in the schema
+        # Note: Pydantic v2 may split models into -Input/-Output variants
         expected_models = [
             "HealthCheckResponse",
-            "DetailedHealthResponse",
             "ServiceStatus"
         ]
 
         for model_name in expected_models:
             assert model_name in schemas, f"Model {model_name} not in OpenAPI schema"
+
+        # DetailedHealthResponse may appear as -Input/-Output variants in Pydantic v2
+        assert (
+            "DetailedHealthResponse" in schemas or
+            "DetailedHealthResponse-Input" in schemas or
+            "DetailedHealthResponse-Output" in schemas
+        ), "DetailedHealthResponse (or variant) not in OpenAPI schema"
 
 
 class TestErrorHandling:

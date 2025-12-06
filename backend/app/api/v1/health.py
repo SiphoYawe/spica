@@ -17,6 +17,7 @@ from app.models import (
     HealthStatus,
 )
 from app.__version__ import __version__
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -157,3 +158,45 @@ async def simple_health() -> HealthCheckResponse:
         version=__version__,
         timestamp=datetime.now(UTC)
     )
+
+
+@router.get(
+    "/demo-mode",
+    summary="Check demo mode status",
+    description="Returns whether the application is running in demo mode",
+    responses={
+        200: {
+            "description": "Demo mode status",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "demo_mode": True,
+                        "message": "Application is running in demo mode - payments are bypassed"
+                    }
+                }
+            }
+        }
+    }
+)
+async def get_demo_mode() -> dict:
+    """
+    Get demo mode status.
+
+    Demo mode bypasses x402 payment verification for demonstrations.
+    Controlled by the SPICA_DEMO_MODE environment variable.
+
+    Returns:
+        dict: Demo mode status and informational message
+    """
+    if settings.spica_demo_mode:
+        logger.debug("Demo mode status check - demo mode is ENABLED")
+        return {
+            "demo_mode": True,
+            "message": "Application is running in demo mode - payments are bypassed"
+        }
+    else:
+        logger.debug("Demo mode status check - demo mode is DISABLED")
+        return {
+            "demo_mode": False,
+            "message": "Application is running in production mode - payments are required"
+        }

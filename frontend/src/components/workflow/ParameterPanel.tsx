@@ -21,26 +21,20 @@ interface ParameterPanelProps {
   className?: string;
 }
 
-export default function ParameterPanel({ node, onClose, onSave, className }: ParameterPanelProps) {
-  const [formData, setFormData] = useState<Record<string, unknown>>({});
+// Inner component that resets state when node changes via key prop
+function ParameterPanelInner({ node, onClose, onSave, className }: ParameterPanelProps & { node: Node }) {
+  const [formData, setFormData] = useState<Record<string, unknown>>({ ...node.data });
   const [hasChanges, setHasChanges] = useState(false);
   const [hasValidationErrors, setHasValidationErrors] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // Focus the panel when it opens
   useEffect(() => {
-    if (node) {
-      // Initialize form data from node data
-      setFormData({ ...node.data });
-      setHasChanges(false);
-      setHasValidationErrors(false);
-
-      // Focus the panel when it opens
-      if (cardRef.current) {
-        cardRef.current.focus();
-      }
+    if (cardRef.current) {
+      cardRef.current.focus();
     }
-  }, [node]);
+  }, []);
 
   // Keyboard event handler for Escape key
   const handleCancel = () => {
@@ -70,10 +64,6 @@ export default function ParameterPanel({ node, onClose, onSave, className }: Par
       };
     }
   }, [node, hasChanges, onClose]);
-
-  if (!node) {
-    return null;
-  }
 
   const handleFormChange = (data: Record<string, unknown>) => {
     setFormData(data);
@@ -280,5 +270,24 @@ export default function ParameterPanel({ node, onClose, onSave, className }: Par
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+// Wrapper component that uses key to reset state when node changes
+export default function ParameterPanel({ node, onClose, onSave, className }: ParameterPanelProps) {
+  if (!node) {
+    return null;
+  }
+
+  // Using key={node.id} ensures component remounts when node changes,
+  // which resets all internal state without needing useEffect + setState
+  return (
+    <ParameterPanelInner
+      key={node.id}
+      node={node}
+      onClose={onClose}
+      onSave={onSave}
+      className={className}
+    />
   );
 }

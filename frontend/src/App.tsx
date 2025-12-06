@@ -4,12 +4,16 @@ import { apiClient } from './api/client'
 import type { HealthResponse, WorkflowSpec, GraphNode, GraphEdge } from './types/api'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import WalletBalance from './components/WalletBalance'
 import WorkflowInput from './components/WorkflowInput'
 import WorkflowGraph from './components/workflow/WorkflowGraph'
 import ParameterPanel from './components/workflow/ParameterPanel'
+import PaymentModal from './components/PaymentModal'
+import DemoModeBanner from './components/DemoModeBanner'
 import ErrorBoundary from './components/ErrorBoundary'
+import { Rocket, CheckCircle2 } from 'lucide-react'
 
 function App() {
   const [backendStatus, setBackendStatus] = useState<string>('checking...')
@@ -21,6 +25,10 @@ function App() {
   const [isGeneratingGraph, setIsGeneratingGraph] = useState(false)
   const [graphError, setGraphError] = useState<string | null>(null)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [deploySuccess, setDeploySuccess] = useState(false)
+  const [deployError, setDeployError] = useState<string | null>(null)
+  const [isDemoMode, setIsDemoMode] = useState(false)
 
   useEffect(() => {
     const checkBackend = async () => {
@@ -33,7 +41,13 @@ function App() {
       }
     }
 
+    const checkDemoMode = async () => {
+      const demoModeStatus = await apiClient.getDemoMode()
+      setIsDemoMode(demoModeStatus.demo_mode)
+    }
+
     checkBackend()
+    checkDemoMode()
   }, [])
 
   const handleWorkflowGenerated = async (workflow: WorkflowSpec) => {
@@ -131,8 +145,30 @@ function App() {
     setSelectedNode(null)
   }
 
+  const handleDeployClick = () => {
+    setDeployError(null)
+    setDeploySuccess(false)
+    setIsPaymentModalOpen(true)
+  }
+
+  const handlePaymentSuccess = (deployedWorkflowId: string) => {
+    setDeploySuccess(true)
+    setDeployError(null)
+    console.log('Workflow deployed successfully:', deployedWorkflowId)
+    // Auto-hide success message after 5 seconds
+    setTimeout(() => setDeploySuccess(false), 5000)
+  }
+
+  const handlePaymentError = (error: string) => {
+    setDeployError(error)
+    setDeploySuccess(false)
+  }
+
   return (
     <ErrorBoundary>
+      {/* Demo Mode Banner - Sticky at top */}
+      {isDemoMode && <DemoModeBanner />}
+
       <div className="mx-auto max-w-7xl p-8">
         <header className="mb-12 text-center">
           <h1 className="mb-2 text-5xl font-bold bg-gradient-to-r from-accent to-accent-secondary bg-clip-text text-transparent">
@@ -176,12 +212,82 @@ function App() {
             </div>
           )}
 
+          {/* Deploy Button - Shows after graph is generated */}
+          {graphNodes.length > 0 && !isGeneratingGraph && workflowId && (
+            <div className="animate-slide-up">
+              <Card className="border-cyber-green/20 bg-gradient-to-br from-card to-darker-bg shadow-[0_0_24px_rgba(0,255,65,0.1)]">
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+                    <div className="space-y-1 text-center sm:text-left">
+                      <h3 className="font-display text-lg font-semibold tracking-wide text-foreground">
+                        Ready to Deploy
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Deploy your workflow to Neo N3 blockchain
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleDeployClick}
+                      variant="cyber"
+                      size="lg"
+                      disabled={deploySuccess}
+                      className="gap-2 px-8"
+                    >
+                      {deploySuccess ? (
+                        <>
+                          <CheckCircle2 className="h-5 w-5" />
+                          Deployed
+                        </>
+                      ) : (
+                        <>
+                          <Rocket className="h-5 w-5" />
+                          Deploy Workflow
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Deploy Success Message */}
+          {deploySuccess && (
+            <Alert variant="success" className="animate-slide-up" aria-live="polite">
+              <CheckCircle2 className="h-5 w-5" />
+              <AlertDescription className="ml-2">
+                <strong className="font-semibold">Success!</strong> Workflow deployed to Neo N3 blockchain.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Deploy Error Message */}
+          {deployError && (
+            <Alert variant="destructive" className="animate-slide-up">
+              <AlertDescription>
+                <strong className="font-semibold">Deployment Error:</strong> {deployError}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Parameter Panel - Shown when node is selected */}
           {selectedNode && (
             <ParameterPanel
               node={selectedNode}
               onClose={handleParameterPanelClose}
               onSave={handleParameterSave}
+            />
+          )}
+
+          {/* Payment Modal - Shows when Deploy is clicked */}
+          {workflowId && (
+            <PaymentModal
+              isOpen={isPaymentModalOpen}
+              onClose={() => setIsPaymentModalOpen(false)}
+              workflowId={workflowId}
+              workflowName={workflowSpec?.name}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
             />
           )}
 

@@ -49,9 +49,10 @@ MAX_WORKFLOWS_PER_USER = 100  # Maximum workflows per user
 MAX_TOTAL_WORKFLOWS = 10000   # Maximum total workflows in system
 
 # Workflow ID validation pattern (Issue #2 - Path Traversal Protection)
-# Format: wf_<12 hex characters>
-# Example: wf_a1b2c3d4e5f6
-WORKFLOW_ID_PATTERN = re.compile(r'^wf_[a-f0-9]{12}$')
+# Format: wf_ followed by alphanumeric, underscore, or hyphen (1-64 chars)
+# Example: wf_a1b2c3d4e5f6, wf_user-workflow_123
+# Prevents: ../../../etc/passwd, ../../../../tmp/evil
+WORKFLOW_ID_PATTERN = re.compile(r'^wf_[a-zA-Z0-9_-]{1,64}$')
 
 # File lock timeout (in seconds)
 FILE_LOCK_TIMEOUT = 10.0
@@ -132,14 +133,13 @@ class WorkflowStorage:
             ValueError: If workflow_id doesn't match expected pattern
 
         Example:
-            Valid: "wf_a1b2c3d4e5f6"
-            Invalid: "../../../etc/passwd"
-            Invalid: "wf_123" (wrong format)
+            Valid: "wf_a1b2c3d4e5f6", "wf_user-workflow_123"
+            Invalid: "../../../etc/passwd", "wf_", "workflow_123" (missing prefix)
         """
         if not WORKFLOW_ID_PATTERN.match(workflow_id):
             logger.warning(f"Invalid workflow_id format rejected: {workflow_id}")
             raise ValueError(
-                f"Invalid workflow_id format. Expected format: wf_<12 hex chars>, got: {workflow_id}"
+                f"Invalid workflow_id format. Expected format: wf_[a-zA-Z0-9_-]{{1,64}}, got: {workflow_id}"
             )
 
     def _get_workflow_path(self, workflow_id: str) -> Path:

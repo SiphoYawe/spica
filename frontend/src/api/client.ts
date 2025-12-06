@@ -271,6 +271,145 @@ class ApiClient {
       };
     }>(`/api/v1/workflows/${workflowId}`, data);
   }
+
+  /**
+   * Deploy workflow (returns 402 if unpaid)
+   */
+  async deployWorkflow(workflowId: string): Promise<{
+    success: boolean;
+    status?: number;
+    headers?: Headers;
+    data?: unknown;
+    error?: {
+      code: string;
+      message: string;
+      details?: string;
+    };
+  }> {
+    try {
+      const url = `${this.baseUrl}/api/v1/workflows/${workflowId}/deploy`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Handle 402 Payment Required specially
+      if (response.status === 402) {
+        return {
+          success: false,
+          status: 402,
+          headers: response.headers,
+          error: {
+            code: 'PAYMENT_REQUIRED',
+            message: 'Payment required to deploy workflow',
+          },
+        };
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          status: response.status,
+          error: {
+            code: `HTTP_${response.status}`,
+            message: errorData.detail || response.statusText,
+          },
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        status: response.status,
+        data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: error instanceof Error ? error.message : 'Network error',
+        },
+      };
+    }
+  }
+
+  /**
+   * Deploy workflow with payment header
+   */
+  async deployWithPayment(workflowId: string, paymentHeader: string) {
+    try {
+      const url = `${this.baseUrl}/api/v1/workflows/${workflowId}/deploy`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-PAYMENT': paymentHeader,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: {
+            code: `HTTP_${response.status}`,
+            message: errorData.detail || response.statusText,
+          },
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: error instanceof Error ? error.message : 'Network error',
+        },
+      };
+    }
+  }
+
+  /**
+   * Get demo mode status
+   * Returns whether the application is running in demo mode (bypasses payments)
+   */
+  async getDemoMode(): Promise<{
+    demo_mode: boolean;
+    message: string;
+  }> {
+    try {
+      const response = await this.get<{
+        demo_mode: boolean;
+        message: string;
+      }>('/api/v1/demo-mode');
+
+      if (response.success && response.data) {
+        return response.data;
+      }
+
+      // Default to production mode on error
+      return {
+        demo_mode: false,
+        message: 'Failed to check demo mode status',
+      };
+    } catch (error) {
+      console.error('Failed to check demo mode:', error);
+      // Default to production mode on error
+      return {
+        demo_mode: false,
+        message: 'Failed to check demo mode status',
+      };
+    }
+  }
 }
 
 // Export singleton instance

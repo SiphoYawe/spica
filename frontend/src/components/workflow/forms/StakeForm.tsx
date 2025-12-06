@@ -34,10 +34,13 @@ export default function StakeForm({ data, onChange, onValidationChange }: StakeF
     data.percentage !== undefined ? 'percentage' : 'fixed'
   );
 
+  // Sync form data when prop changes - use JSON comparison to prevent unnecessary updates
+  const dataKey = JSON.stringify(data);
   useEffect(() => {
-    setFormData(data);
-    setAmountType(data.percentage !== undefined ? 'percentage' : 'fixed');
-  }, [data]);
+    setFormData(() => data);
+    setAmountType(() => data.percentage !== undefined ? 'percentage' : 'fixed');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataKey]);
 
   const handleChange = (field: keyof StakeFormData, value: string | number) => {
     const newData = { ...formData, [field]: value };
