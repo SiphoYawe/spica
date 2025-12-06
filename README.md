@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="frontend/public/spica-logo.svg" alt="Spica Logo" width="400" />
+</p>
+
 # Spica - AI-Powered DeFi Workflow Builder for Neo N3
 
 Spica is an intelligent workflow automation platform for Neo N3 blockchain, powered by SpoonOS AI agents and secured by the x402 payment protocol.
