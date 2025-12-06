@@ -28,7 +28,7 @@ except ImportError:
 
 try:
     # Try importing neo-mamba (neo3 package)
-    # neo-mamba 2.7.0 API
+    # neo-mamba 3.x API
     from neo3.wallet.account import Account as NeoAccount
     NEO_WALLET_AVAILABLE = True
 except ImportError:
@@ -111,12 +111,12 @@ class WalletService:
                 ) from e
 
         try:
-            # Load private key from WIF using neo3/neo-mamba 2.7.0 API
+            # Load private key from WIF using neo3/neo-mamba 3.x API
             # CRITICAL: Never log the WIF value
             wif = settings.demo_wallet_wif
 
-            # Create account from WIF (neo-mamba 2.7.0 API)
-            self._account = NeoAccount.from_wif(wif, password="")
+            # Create account from WIF (neo-mamba 3.x API - no password param)
+            self._account = NeoAccount.from_wif(wif)
 
             # Extract address (public - safe to store)
             self._address = self._account.address

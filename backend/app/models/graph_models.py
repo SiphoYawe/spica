@@ -5,12 +5,11 @@ This module defines the models used by GraphAssembler to create executable
 StateGraph workflows and React Flow visualizations.
 """
 
-from typing import TypedDict, Dict, Any, List, Optional, Literal, TYPE_CHECKING
+from typing import TypedDict, Dict, Any, List, Optional, Literal
 from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 
-if TYPE_CHECKING:
-    from app.models.workflow_models import WorkflowSpec
+from app.models.workflow_models import WorkflowSpec
 
 
 # ============================================================================
@@ -114,7 +113,7 @@ class AssembledGraph(BaseModel):
     workflow_description: str = Field(..., description="Workflow description")
 
     # Original workflow specification
-    workflow_spec: Any = Field(..., description="Original WorkflowSpec used to create this graph")
+    workflow_spec: WorkflowSpec = Field(..., description="Original WorkflowSpec used to create this graph")
 
     # React Flow visualization
     react_flow: ReactFlowGraph = Field(..., description="React Flow graph data")
