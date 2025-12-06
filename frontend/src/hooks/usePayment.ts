@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Payment Hook
  * Manages x402 payment flow for workflow deployment

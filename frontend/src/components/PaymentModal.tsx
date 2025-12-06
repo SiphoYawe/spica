@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * Payment Modal Component
  * x402 payment interface for workflow deployment

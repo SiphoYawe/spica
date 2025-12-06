@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * Demo Mode Banner Component
  * Displays a prominent banner when the application is running in demo mode

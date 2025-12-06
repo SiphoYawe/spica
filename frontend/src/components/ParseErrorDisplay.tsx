@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback } from 'react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -163,9 +165,9 @@ export default function ParseErrorDisplay({ error, onRetry }: ParseErrorDisplayP
               <div id="example-workflows" className="mt-3 space-y-2 text-xs opacity-90">
                 <p className="font-semibold">Example formats:</p>
                 <ul className="list-disc list-inside space-y-1 opacity-80">
-                  <li>"When GAS price drops below $5, swap 10 GAS for NEO"</li>
-                  <li>"Every day at 9 AM, stake 50% of my bNEO"</li>
-                  <li>"If NEO rises above $20, transfer 5 NEO to address NXX..."</li>
+                  <li>&quot;When GAS price drops below $5, swap 10 GAS for NEO&quot;</li>
+                  <li>&quot;Every day at 9 AM, stake 50% of my bNEO&quot;</li>
+                  <li>&quot;If NEO rises above $20, transfer 5 NEO to address NXX...&quot;</li>
                 </ul>
               </div>
             )}
@@ -173,7 +175,7 @@ export default function ParseErrorDisplay({ error, onRetry }: ParseErrorDisplayP
         )}
 
         {/* Technical Details (Optional, for debugging) */}
-        {error.details && import.meta.env.DEV && (
+        {error.details && process.env.NODE_ENV === 'development' && (
           <details className="pt-2 border-t border-cyber-red/30 mt-2">
             <summary className="text-xs cursor-pointer opacity-60 hover:opacity-100">
               Technical details

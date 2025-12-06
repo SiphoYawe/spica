@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * WalletBalance Component
  *
@@ -6,8 +8,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '../api/client';
-import type { WalletInfo } from '../types/api';
+import { apiClient } from '@/api/client';
+import type { WalletInfo } from '@/types/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
