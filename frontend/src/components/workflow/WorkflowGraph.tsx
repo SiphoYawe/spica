@@ -1,4 +1,7 @@
-import ReactFlow, {
+"use client";
+
+import {
+  ReactFlow,
   type Node,
   type Edge,
   Background,
@@ -8,8 +11,8 @@ import ReactFlow, {
   useEdgesState,
   BackgroundVariant,
   Panel,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { nodeTypes } from './nodes';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

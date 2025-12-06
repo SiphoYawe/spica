@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useEffect, useRef } from 'react';
-import type { Node } from 'reactflow';
+import type { Node } from '@xyflow/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
