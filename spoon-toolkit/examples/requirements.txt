@@ -1,0 +1,2 @@
+spoon-toolkits>=0.2.2
+spoon-ai-sdk[memory]>=0.3.4

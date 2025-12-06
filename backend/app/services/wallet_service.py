@@ -111,12 +111,20 @@ class WalletService:
                 ) from e
 
         try:
-            # Load private key from WIF using neo3/neo-mamba 3.x API
+            # Load private key from WIF using neo3/neo-mamba
             # CRITICAL: Never log the WIF value
             wif = settings.demo_wallet_wif
 
-            # Create account from WIF (neo-mamba 3.x API - no password param)
-            self._account = NeoAccount.from_wif(wif)
+            # Create account from WIF
+            # neo-mamba 2.x requires password parameter, 3.x does not
+            import inspect
+            sig = inspect.signature(NeoAccount.from_wif)
+            if 'password' in sig.parameters:
+                # neo-mamba 2.x: requires password for encryption
+                self._account = NeoAccount.from_wif(wif, password="")
+            else:
+                # neo-mamba 3.x: no password parameter
+                self._account = NeoAccount.from_wif(wif)
 
             # Extract address (public - safe to store)
             self._address = self._account.address

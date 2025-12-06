@@ -61,6 +61,7 @@ frontend/.vite/
 
 # Backend
 backend/workflows/
+backend/data/workflows/
 backend/*.log
 
 # Docker
