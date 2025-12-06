@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Backend - FastAPI + SpoonOS
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: spica-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount backend code for hot reload
+      - ./backend:/app
+      # Mount SpoonOS source code for development
+      - ./spoon-core:/spoon-core:ro
+      - ./spoon-toolkit:/spoon-toolkit:ro
+      # Mount workflows directory for persistence
+      - ./backend/workflows:/app/workflows
+    environment:
+      # Application
+      - ENVIRONMENT=development
+      - DEBUG=true
+
+      # LLM (set in .env)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # Neo N3
+      - NEO_TESTNET_RPC=${NEO_TESTNET_RPC:-https://testnet1.neo.coz.io:443}
+      - DEMO_WALLET_WIF=${DEMO_WALLET_WIF}
+
+      # x402 Payment
+      - X402_FACILITATOR_URL=${X402_FACILITATOR_URL}
+      - X402_RECEIVER_ADDRESS=${X402_RECEIVER_ADDRESS}
+      - X402_NETWORK=${X402_NETWORK:-base-sepolia}
+
+      # Python path for SpoonOS
+      - PYTHONPATH=/app:/spoon-core:/spoon-toolkit
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    networks:
+      - spica-network
+
+  # Frontend - React + Vite
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: spica-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount frontend code for hot reload
+      - ./frontend:/app
+      - /app/node_modules  # Prevent node_modules override
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    command: npm run dev -- --host 0.0.0.0
+    restart: unless-stopped
+    networks:
+      - spica-network
+    depends_on:
+      - backend
+
+networks:
+  spica-network:
+    driver: bridge

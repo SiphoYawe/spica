@@ -1,0 +1,550 @@
+/**
+ * WalletBalance Component Styles
+ * Neo-cyberpunk financial terminal aesthetic
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+/* CSS Variables */
+:root {
+  --cyber-green: #00ff41;
+  --cyber-blue: #00d9ff;
+  --cyber-purple: #b026ff;
+  --cyber-red: #ff0055;
+  --dark-bg: #0a0e27;
+  --darker-bg: #050816;
+  --glow-green: rgba(0, 255, 65, 0.5);
+  --glow-blue: rgba(0, 217, 255, 0.5);
+  --terminal-text: #e0e0e0;
+  --terminal-dim: #808080;
+}
+
+/* Main Container */
+.wallet-balance {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--terminal-text);
+}
+
+/* Wallet Card - Holographic Terminal */
+.wallet-card {
+  position: relative;
+  background: linear-gradient(135deg, var(--darker-bg) 0%, var(--dark-bg) 100%);
+  border: 2px solid var(--cyber-green);
+  border-radius: 16px;
+  padding: 24px;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px var(--glow-green),
+    inset 0 0 60px rgba(0, 255, 65, 0.05),
+    0 8px 32px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s ease;
+}
+
+.wallet-card:hover {
+  border-color: var(--cyber-blue);
+  box-shadow:
+    0 0 30px var(--glow-blue),
+    inset 0 0 60px rgba(0, 217, 255, 0.05),
+    0 12px 48px rgba(0, 0, 0, 0.8);
+  transform: translateY(-2px);
+}
+
+/* Holographic Overlay Effects */
+.holo-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 0%,
+    rgba(0, 255, 65, 0.03) 25%,
+    transparent 50%,
+    rgba(0, 217, 255, 0.03) 75%,
+    transparent 100%
+  );
+  background-size: 200% 200%;
+  animation: holoShift 8s ease-in-out infinite;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.wallet-card:hover .holo-overlay {
+  opacity: 1;
+}
+
+@keyframes holoShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Scanning Line Effect */
+.holo-scan {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cyber-green),
+    transparent
+  );
+  box-shadow: 0 0 10px var(--cyber-green);
+  opacity: 0;
+}
+
+.wallet-card:hover .holo-scan {
+  animation: scanLine 2s ease-in-out infinite;
+  opacity: 0.8;
+}
+
+@keyframes scanLine {
+  0% { top: -10%; }
+  100% { top: 110%; }
+}
+
+/* Header Section */
+.wallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+}
+
+.header-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--cyber-green);
+  font-weight: bold;
+  font-family: 'Orbitron', monospace;
+}
+
+.network-indicator {
+  width: 8px;
+  height: 8px;
+  background: var(--cyber-green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyber-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.9); }
+}
+
+.network-text {
+  text-shadow: 0 0 8px var(--glow-green);
+}
+
+/* Refresh Button */
+.refresh-btn {
+  background: transparent;
+  border: 1px solid var(--cyber-green);
+  color: var(--cyber-green);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.refresh-btn:hover {
+  background: rgba(0, 255, 65, 0.1);
+  box-shadow: 0 0 12px var(--glow-green);
+  transform: rotate(90deg);
+}
+
+.refresh-btn:active {
+  transform: scale(0.9) rotate(90deg);
+}
+
+.refresh-btn.refreshing {
+  animation: spin 1s linear infinite;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Address Section */
+.wallet-address-section {
+  margin-bottom: 24px;
+}
+
+.address-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--terminal-dim);
+  margin-bottom: 6px;
+  font-family: 'Orbitron', monospace;
+}
+
+.address-value {
+  font-size: 14px;
+  color: var(--cyber-blue);
+  word-break: break-all;
+  text-shadow: 0 0 8px var(--glow-blue);
+  position: relative;
+}
+
+.address-full {
+  display: none;
+}
+
+.address-short {
+  display: inline;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* Show full address on larger screens */
+@media (min-width: 480px) {
+  .address-full {
+    display: inline;
+  }
+  .address-short {
+    display: none;
+  }
+}
+
+/* Balances Grid */
+.balances-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.balance-item {
+  background: rgba(0, 255, 65, 0.03);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.5s ease-out backwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.balance-item:hover {
+  background: rgba(0, 255, 65, 0.08);
+  border-color: var(--cyber-green);
+  box-shadow: 0 0 16px rgba(0, 255, 65, 0.2);
+}
+
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.token-symbol {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--cyber-green);
+  font-family: 'Orbitron', monospace;
+  letter-spacing: 2px;
+  text-shadow: 0 0 6px var(--glow-green);
+}
+
+.token-decimals {
+  font-size: 9px;
+  color: var(--terminal-dim);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.balance-amount {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--terminal-text);
+  font-family: 'Orbitron', monospace;
+  line-height: 1;
+  margin-bottom: 8px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  letter-spacing: -1px;
+}
+
+/* Data Stream Animation */
+.balance-stream {
+  height: 3px;
+  background: rgba(0, 255, 65, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.stream-line {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cyber-green),
+    transparent
+  );
+  animation: streamFlow 2s ease-in-out infinite;
+}
+
+@keyframes streamFlow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+/* Footer */
+.wallet-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 255, 65, 0.1);
+  font-size: 10px;
+}
+
+.footer-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer-label {
+  color: var(--terminal-dim);
+  letter-spacing: 1px;
+  font-family: 'Orbitron', monospace;
+}
+
+.footer-value {
+  color: var(--terminal-text);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.footer-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cyber-green);
+  font-family: 'Orbitron', monospace;
+  letter-spacing: 1px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--cyber-green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyber-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Loading State */
+.wallet-loading {
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-terminal {
+  text-align: center;
+  color: var(--cyber-green);
+}
+
+.loading-line {
+  width: 200px;
+  height: 2px;
+  background: rgba(0, 255, 65, 0.2);
+  margin: 8px auto;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--cyber-green);
+  animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+.loading-line:nth-child(2)::after {
+  animation-delay: 0.2s;
+}
+
+.loading-line:nth-child(3)::after {
+  animation-delay: 0.4s;
+}
+
+@keyframes loadingPulse {
+  0%, 100% { left: -100%; }
+  50%, 70% { left: 100%; }
+}
+
+.loading-text {
+  display: block;
+  margin-top: 20px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-family: 'Orbitron', monospace;
+  text-shadow: 0 0 8px var(--glow-green);
+  animation: textPulse 2s ease-in-out infinite;
+}
+
+@keyframes textPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Error State */
+.wallet-error {
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-terminal {
+  text-align: center;
+  color: var(--cyber-red);
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  animation: errorBlink 1s ease-in-out infinite;
+}
+
+@keyframes errorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.error-message {
+  font-size: 14px;
+  margin-bottom: 20px;
+  font-family: 'Share Tech Mono', monospace;
+  text-shadow: 0 0 8px rgba(255, 0, 85, 0.5);
+}
+
+.retry-button {
+  background: transparent;
+  border: 2px solid var(--cyber-red);
+  color: var(--cyber-red);
+  padding: 10px 24px;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.retry-button:hover {
+  background: rgba(255, 0, 85, 0.1);
+  box-shadow: 0 0 16px rgba(255, 0, 85, 0.4);
+  transform: scale(1.05);
+}
+
+.retry-button:active {
+  transform: scale(0.98);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .wallet-card {
+    padding: 20px;
+  }
+
+  .balances-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-amount {
+    font-size: 24px;
+  }
+
+  .wallet-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}
+
+/* Accessibility - Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .wallet-card,
+  .balance-item,
+  .refresh-btn,
+  .holo-overlay,
+  .holo-scan,
+  .stream-line,
+  .network-indicator,
+  .status-dot,
+  .loading-line::after,
+  .loading-text,
+  .error-icon {
+    animation: none;
+    transition: none;
+  }
+
+  .wallet-card:hover {
+    transform: none;
+  }
+
+  .refresh-btn:hover {
+    transform: none;
+  }
+}
+
+/* Dark mode support (component is already dark, but adding for completeness) */
+@media (prefers-color-scheme: light) {
+  /* Keep dark theme even in light mode for cyberpunk aesthetic */
+  .wallet-balance {
+    /* Intentionally maintaining dark theme */
+  }
+}
