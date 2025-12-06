@@ -20,9 +20,6 @@ interface UiState {
   snapToGrid: boolean;
   gridVisible: boolean;
 
-  // Theme
-  theme: 'light' | 'dark' | 'system';
-
   // Actions
   setBackendStatus: (status: 'checking' | 'connected' | 'disconnected') => void;
   setBackendVersion: (version: string) => void;
@@ -39,9 +36,6 @@ interface UiState {
   setCanvasPosition: (position: { x: number; y: number }) => void;
   toggleSnapToGrid: () => void;
   toggleGridVisible: () => void;
-
-  // Theme actions
-  setTheme: (theme: 'light' | 'dark' | 'system') => void;
 
   // Helpers
   isHealthy: () => boolean;
@@ -61,7 +55,6 @@ export const useUiStore = create<UiState>()(
         canvasPosition: { x: 0, y: 0 },
         snapToGrid: true,
         gridVisible: true,
-        theme: 'light',
 
         // Backend actions
         setBackendStatus: (status) => set({ backendStatus: status }, false, 'setBackendStatus'),
@@ -80,9 +73,6 @@ export const useUiStore = create<UiState>()(
         toggleSnapToGrid: () => set((state) => ({ snapToGrid: !state.snapToGrid }), false, 'toggleSnapToGrid'),
         toggleGridVisible: () => set((state) => ({ gridVisible: !state.gridVisible }), false, 'toggleGridVisible'),
 
-        // Theme actions
-        setTheme: (theme) => set({ theme }, false, 'setTheme'),
-
         // Helpers
         isHealthy: () => get().backendStatus === 'connected',
       }),
@@ -93,7 +83,6 @@ export const useUiStore = create<UiState>()(
           minimapVisible: state.minimapVisible,
           snapToGrid: state.snapToGrid,
           gridVisible: state.gridVisible,
-          theme: state.theme,
         }),
       }
     ),

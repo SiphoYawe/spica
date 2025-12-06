@@ -6,25 +6,12 @@ import { apiClient } from "@/api/client";
 
 /**
  * Shared hook for app-level initialization.
- * Handles theme application and backend health checks.
+ * Handles backend health checks.
+ * Theme is managed by ThemeProvider (next-themes).
  * Use this in all pages to ensure consistent behavior.
  */
 export function useAppInitialization() {
-  const { setBackendStatus, setBackendVersion, theme } = useUiStore();
-
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
-    }
-  }, [theme]);
+  const { setBackendStatus, setBackendVersion } = useUiStore();
 
   // Health check on mount
   useEffect(() => {
