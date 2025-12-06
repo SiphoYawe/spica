@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+
+# Environment files (secrets should be set via Railway)
+.env
+.env.local
+.env.*.local
+
+# Node modules (frontend will install fresh)
+node_modules/
+frontend/node_modules/
+frontend/.next/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/venv/
+backend/.venv/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation (not needed in production)
+*.md
+docs/
+SETUP.md
+
+# Old/deprecated folders
+frontend-old/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local development files
+docker-compose.yml
+start.sh
