@@ -34,3 +34,61 @@ export interface WalletResponse {
   message?: string;
   timestamp: string;
 }
+
+// Parse API Types
+export interface WorkflowTrigger {
+  type: string;
+  config: Record<string, unknown>;
+}
+
+export interface WorkflowStep {
+  action: string;
+  params: Record<string, unknown>;
+}
+
+export interface WorkflowSpec {
+  name: string;
+  description: string;
+  trigger: WorkflowTrigger;
+  steps: WorkflowStep[];
+}
+
+export interface ParseSuccessResponse {
+  success: true;
+  workflow_spec: WorkflowSpec;
+  confidence: number;
+  parse_time_ms: number;
+  sla_exceeded: boolean;
+}
+
+export interface ParseErrorResponse {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: string;
+    retry?: boolean;
+  };
+}
+
+export type ParseResponse = ParseSuccessResponse | ParseErrorResponse;
+
+export interface ParseRequest {
+  input: string;
+}
+
+export interface ExampleWorkflow {
+  input: string;
+  description: string;
+  category: string;
+}
+
+export interface ExamplesResponse {
+  examples: ExampleWorkflow[];
+}
+
+export interface CapabilitiesResponse {
+  supported_tokens: string[];
+  supported_actions: string[];
+  supported_triggers: string[];
+}

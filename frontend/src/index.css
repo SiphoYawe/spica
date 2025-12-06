@@ -1,68 +1,141 @@
+@import "tailwindcss";
+
+/* Google Fonts for cyberpunk aesthetic */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+/* Custom Theme Configuration */
+@theme {
+  /* Cyberpunk Color Palette */
+  --color-cyber-green: #00ff41;
+  --color-cyber-blue: #00d9ff;
+  --color-cyber-purple: #b026ff;
+  --color-cyber-red: #ff0055;
+  --color-dark-bg: #0a0e27;
+  --color-darker-bg: #050816;
+  --color-glow-green: rgba(0, 255, 65, 0.5);
+  --color-glow-blue: rgba(0, 217, 255, 0.5);
+  --color-terminal-text: #e0e0e0;
+  --color-terminal-dim: #808080;
+
+  /* Base dark theme colors */
+  --color-background: #242424;
+  --color-foreground: rgba(255, 255, 255, 0.87);
+  --color-muted: #888;
+  --color-muted-foreground: #bbb;
+  --color-card: rgba(255, 255, 255, 0.05);
+  --color-card-border: rgba(255, 255, 255, 0.1);
+  --color-success: #4ade80;
+  --color-error: #f87171;
+  --color-accent: #667eea;
+  --color-accent-secondary: #764ba2;
+
+  /* Font Families */
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-display: 'Orbitron', monospace;
+
+  /* Custom Animations */
+  --animate-holo-shift: holo-shift 8s ease-in-out infinite;
+  --animate-scan-line: scan-line 2s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-spin: spin 1s linear infinite;
+  --animate-slide-up: slide-up 0.5s ease-out backwards;
+  --animate-stream-flow: stream-flow 2s ease-in-out infinite;
+  --animate-loading-pulse: loading-pulse 1.5s ease-in-out infinite;
+  --animate-text-pulse: text-pulse 2s ease-in-out infinite;
+  --animate-error-blink: error-blink 1s ease-in-out infinite;
+
+  /* Keyframes */
+  @keyframes holo-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  @keyframes scan-line {
+    0% { top: -10%; }
+    100% { top: 110%; }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.9); }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes stream-flow {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(300%); }
+  }
+
+  @keyframes loading-pulse {
+    0%, 100% { left: -100%; }
+    50%, 70% { left: 100%; }
+  }
+
+  @keyframes text-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes error-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+}
+
+/* Base Styles */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  @apply m-0 min-h-screen min-w-[320px] flex items-center bg-background text-foreground;
 }
 
+/* Link Styles */
+a {
+  @apply font-medium text-accent no-underline hover:text-accent-secondary;
+}
+
+/* Typography */
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  @apply text-5xl leading-tight;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Accessibility - Screen Reader Only */
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+  clip: rect(0, 0, 0, 0);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

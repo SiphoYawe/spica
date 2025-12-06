@@ -28,14 +28,13 @@ except ImportError:
 
 try:
     # Try importing neo-mamba (neo3 package)
-    from neo3.core import cryptography
-    from neo3.wallet import account as neo_account
+    # neo-mamba 2.7.0 API
+    from neo3.wallet.account import Account as NeoAccount
     NEO_WALLET_AVAILABLE = True
 except ImportError:
     # Fallback if neo3/neo-mamba not installed yet
     NEO_WALLET_AVAILABLE = False
-    cryptography = None
-    neo_account = None
+    NeoAccount = None
 
 from app.config import settings
 from app.services.neo_service import NeoService, get_neo_service
@@ -73,7 +72,7 @@ class WalletService:
             neo_service: Optional NeoService instance (will use global if not provided)
         """
         self._neo_service = neo_service
-        self._account = None  # Will be neo_account.Account if neo3 available
+        self._account = None  # Will be NeoAccount if neo3 available
         self._address: Optional[str] = None
         self._initialized = False
 
@@ -112,17 +111,12 @@ class WalletService:
                 ) from e
 
         try:
-            # Load private key from WIF using neo3/neo-mamba
+            # Load private key from WIF using neo3/neo-mamba 2.7.0 API
             # CRITICAL: Never log the WIF value
             wif = settings.demo_wallet_wif
 
-            # Create account from WIF
-            private_key = cryptography.KeyPair.private_key_from_wif(wif)
-            key_pair = cryptography.KeyPair(private_key=private_key)
-            self._account = neo_account.Account.from_key_pair(
-                key_pair=key_pair,
-                password=""  # Demo wallet has no password
-            )
+            # Create account from WIF (neo-mamba 2.7.0 API)
+            self._account = NeoAccount.from_wif(wif, password="")
 
             # Extract address (public - safe to store)
             self._address = self._account.address

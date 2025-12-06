@@ -1,0 +1,42 @@
+/Users/siphoyawe/Desktop/Projects/Encode Hackathon/spica/backend/venv/lib/python3.13/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform darwin -- Python 3.13.9, pytest-8.3.0, pluggy-1.6.0 -- /Users/siphoyawe/Desktop/Projects/Encode Hackathon/spica/backend/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/siphoyawe/Desktop/Projects/Encode Hackathon/spica/backend
+configfile: pytest.ini
+plugins: anyio-4.12.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 17 items
+
+tests/test_parse_endpoint.py::test_parse_endpoint_success PASSED         [  5%]
+tests/test_parse_endpoint.py::test_parse_endpoint_time_trigger PASSED    [ 11%]
+tests/test_parse_endpoint.py::test_parse_endpoint_parse_error PASSED     [ 17%]
+tests/test_parse_endpoint.py::test_parse_endpoint_empty_input PASSED     [ 23%]
+tests/test_parse_endpoint.py::test_parse_endpoint_whitespace_only PASSED [ 29%]
+tests/test_parse_endpoint.py::test_parse_endpoint_too_long PASSED        [ 35%]
+tests/test_parse_endpoint.py::test_parse_endpoint_exactly_500_chars PASSED [ 41%]
+tests/test_parse_endpoint.py::test_parse_endpoint_missing_input_field PASSED [ 47%]
+tests/test_parse_endpoint.py::test_parse_endpoint_invalid_json PASSED    [ 52%]
+tests/test_parse_endpoint.py::test_parse_endpoint_response_structure PASSED [ 58%]
+tests/test_parse_endpoint.py::test_parse_endpoint_performance_tracking PASSED [ 64%]
+tests/test_parse_endpoint.py::test_get_example_workflows PASSED          [ 70%]
+tests/test_parse_endpoint.py::test_get_parser_capabilities PASSED        [ 76%]
+tests/test_parse_endpoint.py::test_parse_endpoint_unexpected_error PASSED [ 82%]
+tests/test_parse_endpoint.py::test_parse_endpoint_parser_unavailable PASSED [ 88%]
+tests/test_parse_endpoint.py::test_parse_endpoint_real_parser SKIPPED    [ 94%]
+tests/test_parse_endpoint.py::test_parse_endpoint_cors_headers PASSED    [100%]
+
+=============================== warnings summary ===============================
+app/config.py:11
+  /Users/siphoyawe/Desktop/Projects/Encode Hackathon/spica/backend/app/config.py:11: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+tests/test_parse_endpoint.py::test_parse_endpoint_invalid_json
+  /Users/siphoyawe/Desktop/Projects/Encode Hackathon/spica/backend/venv/lib/python3.13/site-packages/httpx/_models.py:408: DeprecationWarning: Use 'content=<...>' to upload raw bytes/text content.
+    headers, stream = encode_request(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 16 passed, 1 skipped, 2 warnings in 1.72s ===================

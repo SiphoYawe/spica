@@ -13,8 +13,8 @@ sqlalchemy>=2.0.38
 aiohttp>=3.13.2
 
 # Neo N3
-neo3-boa==1.3.0
-neo-mamba==2.0.0
+neo3-boa==1.4.1  # Latest version compatible with Python 3.13
+neo-mamba==3.1.0  # Latest version - 2.x series doesn't support Python 3.13
 
 # HTTP Client (httpx only - more modern and async-first)
 httpx==0.27.0

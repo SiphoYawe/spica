@@ -156,6 +156,54 @@ class ApiClient {
       timestamp: string;
     }>(`/api/v1/wallet/balance/${token}`);
   }
+
+  /**
+   * Parse natural language input into workflow spec
+   */
+  async parseWorkflow(input: string) {
+    return this.post<{
+      success: boolean;
+      workflow_spec?: {
+        name: string;
+        description: string;
+        trigger: { type: string; config: Record<string, unknown> };
+        steps: Array<{ action: string; params: Record<string, unknown> }>;
+      };
+      confidence?: number;
+      parse_time_ms?: number;
+      sla_exceeded?: boolean;
+      error?: {
+        code: string;
+        message: string;
+        details?: string;
+        retry?: boolean;
+      };
+    }>('/api/v1/parse', { input });
+  }
+
+  /**
+   * Get example workflows
+   */
+  async getExamples() {
+    return this.get<{
+      examples: Array<{
+        input: string;
+        description: string;
+        category: string;
+      }>;
+    }>('/api/v1/parse/examples');
+  }
+
+  /**
+   * Get parser capabilities
+   */
+  async getCapabilities() {
+    return this.get<{
+      supported_tokens: string[];
+      supported_actions: string[];
+      supported_triggers: string[];
+    }>('/api/v1/parse/capabilities');
+  }
 }
 
 // Export singleton instance
