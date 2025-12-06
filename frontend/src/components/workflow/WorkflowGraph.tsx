@@ -11,6 +11,7 @@ import {
   useEdgesState,
   BackgroundVariant,
   Panel,
+  type ColorMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { nodeTypes } from './nodes';
@@ -34,6 +35,9 @@ const defaultEdgeOptions = {
   animated: true,
 };
 
+// Dark mode only - no theme switching
+const colorMode: ColorMode = "dark";
+
 export default function WorkflowGraph({
   nodes: initialNodes,
   edges: initialEdges,
@@ -42,6 +46,7 @@ export default function WorkflowGraph({
   className,
   onNodeClick,
 }: WorkflowGraphProps) {
+
   // Issue #9 fix: Use props directly since graph is read-only
   // Removed unused state variables, using initialNodes/initialEdges with state hooks
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
@@ -82,8 +87,9 @@ export default function WorkflowGraph({
           }}
           minZoom={0.1}
           maxZoom={2}
+          colorMode={colorMode}
           attributionPosition="bottom-right"
-          className="bg-darker-bg"
+          className="bg-canvas"
         >
           {/* Background pattern */}
           <Background

@@ -10,6 +10,7 @@ import {
   useEdgesState,
   BackgroundVariant,
   type Connection,
+  type ColorMode,
   addEdge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -34,7 +35,11 @@ const fitViewOptions = {
   maxZoom: 1.5,
 };
 
+// Dark mode only - no theme switching
+const colorMode: ColorMode = "dark";
+
 export function WorkflowCanvas() {
+
   const {
     nodes: storeNodes,
     edges: storeEdges,
@@ -158,6 +163,7 @@ export function WorkflowCanvas() {
         fitViewOptions={fitViewOptions}
         minZoom={0.1}
         maxZoom={2}
+        colorMode={colorMode}
         className={cn(
           "bg-canvas",
           hasNodes ? "opacity-100" : "opacity-50"

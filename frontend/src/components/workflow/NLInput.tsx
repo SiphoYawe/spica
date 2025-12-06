@@ -255,10 +255,10 @@ export function NLInput() {
         )}
 
         {/* Keyboard hint */}
-        <div className="mt-2 text-center">
-          <span className="text-[10px] text-muted-foreground/60">
-            Press <kbd className="rounded border border-border bg-muted px-1 py-0.5 text-[10px]">Enter</kbd> to generate,{" "}
-            <kbd className="rounded border border-border bg-muted px-1 py-0.5 text-[10px]">Shift+Enter</kbd> for new line
+        <div className="mt-3 text-center">
+          <span className="text-xs text-muted-foreground">
+            Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-medium">Enter</kbd> to generate,{" "}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-medium">Shift+Enter</kbd> for new line
           </span>
         </div>
       </div>

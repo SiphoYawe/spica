@@ -9,6 +9,7 @@ import {
   BackgroundVariant,
   type Node,
   type Edge,
+  type ColorMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -30,6 +31,9 @@ const fitViewOptions = {
   maxZoom: 1.5,
 };
 
+// Dark mode only - no theme switching
+const colorMode: ColorMode = "dark";
+
 interface ReadOnlyGraphProps {
   nodes: Node[];
   edges: Edge[];
@@ -37,6 +41,7 @@ interface ReadOnlyGraphProps {
 }
 
 export function ReadOnlyGraph({ nodes, edges, className }: ReadOnlyGraphProps) {
+
   // Convert nodes to proper format with positions
   const processedNodes = useMemo(() => {
     return nodes.map((node) => ({
@@ -83,6 +88,7 @@ export function ReadOnlyGraph({ nodes, edges, className }: ReadOnlyGraphProps) {
         elementsSelectable={false}
         panOnDrag
         zoomOnScroll
+        colorMode={colorMode}
         className="bg-canvas"
         proOptions={{ hideAttribution: true }}
       >

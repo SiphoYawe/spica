@@ -81,10 +81,10 @@ function DraggableItem({ nodeType, collapsed }: DraggableItemProps) {
         {!collapsed && (
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">{config.title}</span>
+              <span className="text-base font-medium">{config.title}</span>
               <GripVertical className="h-4 w-4 text-muted-foreground/50" />
             </div>
-            <span className="text-xs text-muted-foreground line-clamp-1">
+            <span className="text-sm text-muted-foreground line-clamp-1">
               {config.description}
             </span>
           </div>
@@ -138,8 +138,8 @@ export function WorkflowSidebar({ collapsed = false }: WorkflowSidebarProps) {
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold">Node Palette</h2>
-              <p className="text-xs text-muted-foreground">Drag to canvas</p>
+              <h2 className="text-base font-semibold">Node Palette</h2>
+              <p className="text-sm text-muted-foreground">Drag to canvas</p>
             </div>
           )}
         </div>

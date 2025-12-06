@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import {
   ReactFlow,
   Background,
@@ -8,7 +8,6 @@ import {
   type ColorMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useTheme } from "next-themes";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { useCanvasStore, type CanvasStore } from "./store";
@@ -29,6 +28,9 @@ const fitViewOptions = {
   maxZoom: 1.5,
 };
 
+// Dark mode only - no theme switching
+const colorMode: ColorMode = "dark";
+
 /**
  * WorkflowCanvasPro - Main workflow canvas with Pro template design
  *
@@ -41,14 +43,6 @@ const fitViewOptions = {
  * - Node status indicators
  */
 export function WorkflowCanvasPro() {
-  const { resolvedTheme } = useTheme();
-
-  // Determine color mode for ReactFlow
-  // resolvedTheme gives us the actual theme, handling "system" preference
-  const colorMode = useMemo<ColorMode>(() => {
-    if (resolvedTheme === "light") return "light";
-    return "dark";
-  }, [resolvedTheme]);
 
   // Store selectors
   const selector = useCallback(

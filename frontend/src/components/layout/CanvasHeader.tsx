@@ -10,10 +10,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Save,
-  Share2,
-  Undo2,
-  Redo2,
   ZoomIn,
   ZoomOut,
   Maximize2,
@@ -187,36 +183,6 @@ export function CanvasHeader() {
           <WalletDisplay />
 
           <div className="mx-1 h-4 w-px bg-border" />
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
-                <Undo2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Undo</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
-                <Redo2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Redo</TooltipContent>
-          </Tooltip>
-
-          <div className="mx-1 h-4 w-px bg-border" />
-
-          <Button variant="outline" size="sm" className="h-8 gap-2">
-            <Save className="h-3.5 w-3.5" />
-            Save
-          </Button>
-
-          <Button variant="outline" size="sm" className="h-8 gap-2">
-            <Share2 className="h-3.5 w-3.5" />
-            Share
-          </Button>
 
           <Button
             variant="cyber"
