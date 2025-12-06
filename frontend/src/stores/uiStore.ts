@@ -61,7 +61,7 @@ export const useUiStore = create<UiState>()(
         canvasPosition: { x: 0, y: 0 },
         snapToGrid: true,
         gridVisible: true,
-        theme: 'dark',
+        theme: 'light',
 
         // Backend actions
         setBackendStatus: (status) => set({ backendStatus: status }, false, 'setBackendStatus'),

@@ -10,7 +10,19 @@ import { AppLayout, Sidebar, PropertiesPanel, CanvasHeader } from "@/components/
 import { WorkflowCanvas } from "@/components/workflow";
 
 export default function Home() {
-  const { setBackendStatus, setBackendVersion } = useUiStore();
+  const { setBackendStatus, setBackendVersion, theme } = useUiStore();
+
+  // Apply theme to document
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("light", "dark");
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+  }, [theme]);
 
   // Health check on mount
   useEffect(() => {
