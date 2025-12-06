@@ -18,9 +18,6 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Spica - AI-Powered DeFi Workflow Builder",
   description: "Transform natural language into executable blockchain automation on Neo N3",
-  icons: {
-    icon: "/spica-logo.svg",
-  },
 };
 
 export default function RootLayout({
