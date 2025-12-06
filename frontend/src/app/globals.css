@@ -1,0 +1,687 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================
+   SPICA DESIGN SYSTEM
+   Scientific Instrument Interface
+   ============================================ */
+
+@theme inline {
+  /* Typography */
+  --font-sans: var(--font-outfit);
+  --font-mono: var(--font-jetbrains-mono);
+
+  /* Base Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Semantic Colors */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+
+  /* UI Elements */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Spica Brand */
+  --color-spica: var(--spica);
+  --color-spica-50: var(--spica-50);
+  --color-spica-100: var(--spica-100);
+  --color-spica-200: var(--spica-200);
+  --color-spica-300: var(--spica-300);
+  --color-spica-400: var(--spica-400);
+  --color-spica-500: var(--spica-500);
+  --color-spica-600: var(--spica-600);
+  --color-spica-700: var(--spica-700);
+  --color-spica-800: var(--spica-800);
+  --color-spica-900: var(--spica-900);
+
+  /* Node Colors */
+  --color-node-trigger: var(--node-trigger);
+  --color-node-swap: var(--node-swap);
+  --color-node-stake: var(--node-stake);
+  --color-node-transfer: var(--node-transfer);
+
+  /* Canvas */
+  --color-canvas: var(--canvas);
+  --color-canvas-grid: var(--canvas-grid);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Border Radius - Sharper for scientific aesthetic */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+:root {
+  --radius: 8px;
+
+  /* ========== DARK THEME (Default) ========== */
+  /* Scientific instrument aesthetic - dark by default */
+
+  /* Surface hierarchy: darkest to lightest */
+  --background: #050508;
+  --foreground: #E8E8EC;
+  --card: #0C0C10;
+  --card-foreground: #E8E8EC;
+  --popover: #0C0C10;
+  --popover-foreground: #E8E8EC;
+
+  /* Primary = Spica Green - The singular accent */
+  --primary: #00FF48;
+  --primary-foreground: #021208;
+
+  /* Secondary - Subtle, desaturated */
+  --secondary: #16161A;
+  --secondary-foreground: #A0A0A8;
+
+  /* Muted - For disabled/placeholder states */
+  --muted: #1C1C22;
+  --muted-foreground: #6B6B78;
+
+  /* Accent - Spica green tint */
+  --accent: #0A1F10;
+  --accent-foreground: #00FF48;
+
+  /* Destructive */
+  --destructive: #FF3B3B;
+
+  /* Borders & Inputs */
+  --border: #1E1E24;
+  --input: #1E1E24;
+  --ring: #00FF48;
+
+  /* Canvas - The workflow area */
+  --canvas: #08080C;
+  --canvas-grid: #1A1A20;
+
+  /* Sidebar */
+  --sidebar: #0A0A0E;
+  --sidebar-foreground: #E8E8EC;
+  --sidebar-primary: #00FF48;
+  --sidebar-primary-foreground: #021208;
+  --sidebar-accent: #0A1F10;
+  --sidebar-accent-foreground: #00FF48;
+  --sidebar-border: #1E1E24;
+  --sidebar-ring: #00FF48;
+
+  /* Spica Brand Palette */
+  --spica: #00FF48;
+  --spica-50: #E6FFF0;
+  --spica-100: #B3FFD1;
+  --spica-200: #66FF9E;
+  --spica-300: #33FF75;
+  --spica-400: #00FF48;
+  --spica-500: #00E040;
+  --spica-600: #00B835;
+  --spica-700: #008F29;
+  --spica-800: #00661D;
+  --spica-900: #0A1F10;
+
+  /* Node Type Colors - Precise, instrument-like */
+  --node-trigger: #F59E0B;
+  --node-trigger-bg: rgba(245, 158, 11, 0.08);
+  --node-trigger-border: rgba(245, 158, 11, 0.3);
+  --node-swap: #06B6D4;
+  --node-swap-bg: rgba(6, 182, 212, 0.08);
+  --node-swap-border: rgba(6, 182, 212, 0.3);
+  --node-stake: #10B981;
+  --node-stake-bg: rgba(16, 185, 129, 0.08);
+  --node-stake-border: rgba(16, 185, 129, 0.3);
+  --node-transfer: #3B82F6;
+  --node-transfer-bg: rgba(59, 130, 246, 0.08);
+  --node-transfer-border: rgba(59, 130, 246, 0.3);
+
+  /* Charts */
+  --chart-1: #00FF48;
+  --chart-2: #06B6D4;
+  --chart-3: #F59E0B;
+  --chart-4: #3B82F6;
+  --chart-5: #10B981;
+
+  /* Glow Effects */
+  --glow-spica: 0 0 20px rgba(0, 255, 72, 0.15), 0 0 40px rgba(0, 255, 72, 0.05);
+  --glow-spica-strong: 0 0 20px rgba(0, 255, 72, 0.3), 0 0 60px rgba(0, 255, 72, 0.1);
+}
+
+.light {
+  /* Light Theme - Clean laboratory */
+  --background: #FAFAFA;
+  --foreground: #0C0C10;
+  --card: #FFFFFF;
+  --card-foreground: #0C0C10;
+  --popover: #FFFFFF;
+  --popover-foreground: #0C0C10;
+
+  --primary: #00CC3A;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #F0F0F4;
+  --secondary-foreground: #3C3C44;
+
+  --muted: #F5F5F8;
+  --muted-foreground: #6B6B78;
+
+  --accent: #E6FFF0;
+  --accent-foreground: #00661D;
+
+  --destructive: #DC2626;
+
+  --border: #E0E0E8;
+  --input: #E0E0E8;
+  --ring: #00CC3A;
+
+  --canvas: #F5F5F8;
+  --canvas-grid: #E0E0E8;
+
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0C0C10;
+  --sidebar-primary: #00CC3A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E6FFF0;
+  --sidebar-accent-foreground: #00661D;
+  --sidebar-border: #E0E0E8;
+  --sidebar-ring: #00CC3A;
+
+  /* Node colors adjusted for light */
+  --node-trigger-bg: rgba(245, 158, 11, 0.12);
+  --node-trigger-border: rgba(245, 158, 11, 0.4);
+  --node-swap-bg: rgba(6, 182, 212, 0.12);
+  --node-swap-border: rgba(6, 182, 212, 0.4);
+  --node-stake-bg: rgba(16, 185, 129, 0.12);
+  --node-stake-border: rgba(16, 185, 129, 0.4);
+  --node-transfer-bg: rgba(59, 130, 246, 0.12);
+  --node-transfer-border: rgba(59, 130, 246, 0.4);
+
+  --glow-spica: 0 0 15px rgba(0, 204, 58, 0.1);
+  --glow-spica-strong: 0 0 25px rgba(0, 204, 58, 0.2);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+
+  /* Focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-spica/20 text-foreground;
+  }
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+
+  h4 {
+    @apply text-lg;
+  }
+
+  code, kbd, pre {
+    font-family: var(--font-mono), ui-monospace, monospace;
+  }
+
+  /* Monospace numbers for data displays */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ============================================
+   CANVAS & WORKFLOW STYLES
+   ============================================ */
+
+/* Canvas background with subtle grid */
+.canvas-bg {
+  background-color: var(--canvas);
+  background-image:
+    linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+
+/* Dot grid alternative */
+.canvas-dots {
+  background-color: var(--canvas);
+  background-image: radial-gradient(circle at center, var(--canvas-grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ReactFlow customizations */
+.react-flow__node {
+  @apply transition-all duration-150;
+}
+
+.react-flow__node:hover {
+  filter: drop-shadow(0 0 12px rgba(0, 255, 72, 0.1));
+}
+
+.react-flow__node.selected {
+  filter: drop-shadow(0 0 16px rgba(0, 255, 72, 0.25));
+}
+
+/* Edge styling */
+.react-flow__edge-path {
+  stroke: var(--muted-foreground);
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--spica);
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 6 4;
+  animation: edge-flow 0.6s linear infinite;
+}
+
+@keyframes edge-flow {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Connection line */
+.react-flow__connection-line {
+  stroke: var(--spica);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+/* Handles */
+.react-flow__handle {
+  @apply w-3 h-3 rounded-full border-2 transition-all duration-150;
+  background: var(--card);
+  border-color: var(--border);
+}
+
+.react-flow__handle:hover {
+  border-color: var(--spica);
+  box-shadow: 0 0 8px rgba(0, 255, 72, 0.4);
+}
+
+.react-flow__handle.connecting,
+.react-flow__handle.valid {
+  border-color: var(--spica);
+  background: var(--spica);
+}
+
+/* Controls panel */
+.react-flow__controls {
+  @apply border border-border bg-card/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden;
+}
+
+.react-flow__controls-button {
+  @apply w-8 h-8 flex items-center justify-center border-b border-border bg-transparent text-muted-foreground transition-colors;
+}
+
+.react-flow__controls-button:hover {
+  @apply bg-accent text-accent-foreground;
+}
+
+.react-flow__controls-button:last-child {
+  @apply border-b-0;
+}
+
+.react-flow__controls-button svg {
+  @apply w-4 h-4;
+}
+
+/* MiniMap */
+.react-flow__minimap {
+  @apply border border-border bg-card/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden;
+}
+
+/* ============================================
+   WORKFLOW NODES
+   ============================================ */
+
+/* Base node styling */
+.workflow-node {
+  @apply relative bg-card border rounded-lg overflow-hidden transition-all duration-150;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.workflow-node:hover {
+  @apply border-muted-foreground/30;
+}
+
+.workflow-node.selected {
+  box-shadow: var(--glow-spica);
+}
+
+/* Node type indicator bar */
+.workflow-node::before {
+  content: '';
+  @apply absolute top-0 left-0 right-0 h-0.5;
+}
+
+/* Node header */
+.workflow-node-header {
+  @apply flex items-center gap-2 px-3 py-2 border-b border-border/50;
+}
+
+.workflow-node-icon {
+  @apply w-7 h-7 rounded flex items-center justify-center text-xs font-bold;
+}
+
+.workflow-node-title {
+  @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+}
+
+/* Node content */
+.workflow-node-content {
+  @apply p-3 space-y-2;
+}
+
+.workflow-node-label {
+  @apply text-sm font-medium text-foreground;
+}
+
+.workflow-node-meta {
+  @apply text-xs text-muted-foreground font-mono;
+}
+
+/* Node types */
+.workflow-node--trigger {
+  border-color: var(--node-trigger-border);
+}
+.workflow-node--trigger::before {
+  background: var(--node-trigger);
+}
+.workflow-node--trigger .workflow-node-icon {
+  background: var(--node-trigger-bg);
+  color: var(--node-trigger);
+}
+
+.workflow-node--swap {
+  border-color: var(--node-swap-border);
+}
+.workflow-node--swap::before {
+  background: var(--node-swap);
+}
+.workflow-node--swap .workflow-node-icon {
+  background: var(--node-swap-bg);
+  color: var(--node-swap);
+}
+
+.workflow-node--stake {
+  border-color: var(--node-stake-border);
+}
+.workflow-node--stake::before {
+  background: var(--node-stake);
+}
+.workflow-node--stake .workflow-node-icon {
+  background: var(--node-stake-bg);
+  color: var(--node-stake);
+}
+
+.workflow-node--transfer {
+  border-color: var(--node-transfer-border);
+}
+.workflow-node--transfer::before {
+  background: var(--node-transfer);
+}
+.workflow-node--transfer .workflow-node-icon {
+  background: var(--node-transfer-bg);
+  color: var(--node-transfer);
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/30;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+/* Pulse glow for active states */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 72, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(0, 255, 72, 0.2);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Scan line effect */
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-scan-line::after {
+  content: '';
+  @apply absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-spica to-transparent pointer-events-none;
+  animation: scan-line 3s ease-in-out infinite;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    var(--muted-foreground)/10 50%,
+    var(--muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Fade in up */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+/* Stagger children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Gradient text */
+.text-gradient-spica {
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(135deg, #00FF48 0%, #00CC3A 100%);
+}
+
+/* Glass effect */
+.glass {
+  @apply bg-card/80 backdrop-blur-md border border-border/50;
+}
+
+/* Status indicator */
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-dot--active {
+  @apply bg-spica;
+  box-shadow: 0 0 8px var(--spica);
+}
+
+.status-dot--warning {
+  @apply bg-amber-500;
+  box-shadow: 0 0 8px #F59E0B;
+}
+
+.status-dot--error {
+  @apply bg-red-500;
+  box-shadow: 0 0 8px #EF4444;
+}
+
+.status-dot--idle {
+  @apply bg-muted-foreground;
+}
+
+/* Panel styles */
+.panel {
+  @apply bg-card border-r border-border h-full;
+}
+
+.panel-header {
+  @apply flex items-center justify-between px-4 h-14 border-b border-border;
+}
+
+.panel-title {
+  @apply text-sm font-semibold tracking-wide;
+}
+
+.panel-content {
+  @apply p-4;
+}
+
+/* Input focus ring override for spica green */
+.input-spica:focus {
+  @apply ring-2 ring-spica/50 border-spica;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-200;
+}
+
+.card-hover:hover {
+  @apply border-muted-foreground/30;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Divider with glow */
+.divider-glow {
+  @apply h-px bg-gradient-to-r from-transparent via-spica/30 to-transparent;
+}
