@@ -141,7 +141,8 @@ class SpoonOSService:
         self,
         state_schema: Type[TypedDict],
         nodes: Optional[Dict[str, Callable]] = None,
-        edges: Optional[List[Tuple[str, str]]] = None
+        edges: Optional[List[Tuple[str, str]]] = None,
+        entry_point: Optional[str] = None
     ) -> StateGraph:
         """
         Create a StateGraph instance.
@@ -150,6 +151,8 @@ class SpoonOSService:
             state_schema: TypedDict class defining state structure
             nodes: Optional dict of {node_name: node_function}
             edges: Optional list of (source, target) tuples
+                   Special values: "__start__" sets entry point, "END" is ignored (terminal nodes are implicit)
+            entry_point: Optional explicit entry point node name
 
         Returns:
             StateGraph: Configured graph instance
@@ -168,11 +171,26 @@ class SpoonOSService:
                     graph.add_node(node_name, node_func)
                     logger.info(f"Added node: {node_name}")
 
-            # Add edges if provided
+            # Process edges if provided
+            # SpoonOS StateGraph uses set_entry_point() instead of __start__ edge
+            # Terminal nodes don't need END edge - they're implicit
             if edges:
                 for source, target in edges:
-                    graph.add_edge(source, target)
-                    logger.info(f"Added edge: {source} -> {target}")
+                    if source == "__start__":
+                        # Set entry point instead of adding edge
+                        graph.set_entry_point(target)
+                        logger.info(f"Set entry point: {target}")
+                    elif target == "END":
+                        # Skip END edges - terminal nodes are implicit in SpoonOS
+                        logger.info(f"Node '{source}' is terminal (END edge ignored)")
+                    else:
+                        graph.add_edge(source, target)
+                        logger.info(f"Added edge: {source} -> {target}")
+
+            # Set explicit entry point if provided
+            if entry_point:
+                graph.set_entry_point(entry_point)
+                logger.info(f"Set explicit entry point: {entry_point}")
 
             logger.info("StateGraph created successfully")
             return graph

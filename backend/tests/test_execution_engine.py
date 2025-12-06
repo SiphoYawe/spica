@@ -76,7 +76,7 @@ class TestNeoExecutionEngine:
     """Test NeoExecutionEngine class"""
 
     @pytest.fixture
-    async def mock_neo_service(self):
+    def mock_neo_service(self):
         """Create a mock NeoService"""
         service = AsyncMock()
         service.connect_testnet = AsyncMock(return_value={
@@ -90,7 +90,7 @@ class TestNeoExecutionEngine:
         return service
 
     @pytest.fixture
-    async def mock_account(self):
+    def mock_account(self):
         """Create a mock Neo account"""
         account = Mock()
         account.address = "NTest123456789012345678901234567"
@@ -98,7 +98,7 @@ class TestNeoExecutionEngine:
         return account
 
     @pytest.fixture
-    async def engine(self, mock_neo_service):
+    def engine(self, mock_neo_service, event_loop):
         """Create a NeoExecutionEngine with mocked dependencies"""
         with patch('app.services.execution_engine.NEO3_AVAILABLE', True):
             with patch('app.services.execution_engine.get_neo_service', return_value=mock_neo_service):
@@ -109,7 +109,7 @@ class TestNeoExecutionEngine:
                     mock_account_class.from_wif = Mock(return_value=mock_account)
 
                     engine = NeoExecutionEngine(neo_service=mock_neo_service)
-                    await engine._initialize()
+                    event_loop.run_until_complete(engine._initialize())
                     yield engine
 
     @pytest.mark.asyncio
@@ -508,7 +508,7 @@ class TestConfigurationOptions:
     """Test configuration options for execution engine"""
 
     @pytest.fixture
-    async def mock_neo_service(self):
+    def mock_neo_service(self):
         """Create a mock NeoService for this test class"""
         service = AsyncMock()
         service.connect_testnet = AsyncMock(return_value={
