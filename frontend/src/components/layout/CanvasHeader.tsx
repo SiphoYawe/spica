@@ -21,9 +21,11 @@ import {
   Map,
   Loader2,
   Rocket,
+  PanelLeft,
+  PanelLeftClose,
 } from "lucide-react";
 import { MainNav } from "./MainNav";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { WalletDisplay } from "@/components/WalletDisplay";
 
 export function CanvasHeader() {
   const {
@@ -37,6 +39,8 @@ export function CanvasHeader() {
   const { openModal } = usePaymentStore();
 
   const {
+    sidebarOpen,
+    toggleSidebar,
     minimapVisible,
     toggleMinimap,
     gridVisible,
@@ -50,8 +54,29 @@ export function CanvasHeader() {
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex h-14 items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm px-4">
-        {/* Left: Main Navigation */}
-        <div className="flex items-center gap-4">
+        {/* Left: Sidebar toggle + Main Navigation */}
+        <div className="flex items-center gap-3">
+          {/* Sidebar Toggle Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={toggleSidebar}
+              >
+                {sidebarOpen ? (
+                  <PanelLeftClose className="h-4 w-4" />
+                ) : (
+                  <PanelLeft className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            </TooltipContent>
+          </Tooltip>
+
           <MainNav />
 
           {/* Workflow info - only show on Create tab when there's a workflow */}
@@ -158,6 +183,11 @@ export function CanvasHeader() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          {/* Wallet Display */}
+          <WalletDisplay />
+
+          <div className="mx-1 h-4 w-px bg-border" />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
@@ -175,10 +205,6 @@ export function CanvasHeader() {
             </TooltipTrigger>
             <TooltipContent>Redo</TooltipContent>
           </Tooltip>
-
-          <div className="mx-1 h-4 w-px bg-border" />
-
-          <ThemeToggle />
 
           <div className="mx-1 h-4 w-px bg-border" />
 
