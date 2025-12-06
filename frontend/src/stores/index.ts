@@ -8,3 +8,5 @@ export type { PaymentRequest, PaymentStatus } from './paymentStore';
 
 export { useUiStore } from './uiStore';
 export type { PanelId } from './uiStore';
+
+export { useWalletStore } from './walletStore';
