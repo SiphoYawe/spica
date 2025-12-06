@@ -4,12 +4,22 @@ import {
   createContext,
   useContext,
   useState,
+  useMemo,
   type ReactNode,
 } from "react";
 import { useStore, type StoreApi } from "zustand";
 import { createCanvasStore, type CanvasStore } from "./canvas-store";
 import type { SpicaNode } from "../config";
 import type { SpicaEdge } from "../edges";
+
+// Fallback store for read-only mode - created once as module singleton
+let fallbackStore: StoreApi<CanvasStore> | null = null;
+function getFallbackStore(): StoreApi<CanvasStore> {
+  if (!fallbackStore) {
+    fallbackStore = createCanvasStore();
+  }
+  return fallbackStore;
+}
 
 // Context for the store
 const CanvasStoreContext = createContext<StoreApi<CanvasStore> | null>(null);
@@ -71,6 +81,28 @@ export function useCanvasStore<T = CanvasStore>(
 export function useCanvasContext(): boolean {
   const storeContext = useContext(CanvasStoreContext);
   return storeContext !== null;
+}
+
+/**
+ * useCanvasStoreSafe - Hook that works with or without CanvasStoreProvider
+ *
+ * Uses a fallback empty store when no provider is present.
+ * This allows components to work in both editable and read-only contexts.
+ * Actions on the fallback store are no-ops that don't affect anything.
+ *
+ * @param selector - Selector function for partial state
+ * @returns Object with selected value and isEditable flag
+ */
+export function useCanvasStoreSafe<T>(
+  selector: (store: CanvasStore) => T
+): { value: T; isEditable: boolean } {
+  const storeContext = useContext(CanvasStoreContext);
+  const isEditable = storeContext !== null;
+
+  // Always call useStore (consistent hook pattern) but use fallback if no context
+  const value = useStore(storeContext ?? getFallbackStore(), selector);
+
+  return { value, isEditable };
 }
 
 // Re-export types

@@ -12,7 +12,7 @@ import {
   type NodeStatus,
 } from "../../base";
 import { NODE_SIZE, nodesConfig, iconMapping, type SpicaNodeType, type WorkflowNodeData } from "../../config";
-import { useCanvasStore, useCanvasContext } from "../../store";
+import { useCanvasStoreSafe } from "../../store";
 
 export interface WorkflowNodeProps {
   id: string;
@@ -29,9 +29,15 @@ export interface WorkflowNodeProps {
  * - Play button to run workflow from this node
  * - Delete button to remove node
  * - Fixed dimensions matching Pro template (260×80)
+ *
+ * Note: Works in both editable mode (with CanvasStoreProvider) and
+ * read-only mode (without provider). In read-only mode, action buttons are hidden.
  */
 export function WorkflowNode({ id, data, children }: WorkflowNodeProps) {
-  const removeNode = useCanvasStore((s) => s.removeNode);
+  // Use safe hook that works with or without CanvasStoreProvider
+  const { value: removeNode, isEditable } = useCanvasStoreSafe(
+    (s) => s.removeNode
+  );
 
   // Get node type from data or infer from icon
   const nodeType = data.icon as SpicaNodeType | undefined;
@@ -100,36 +106,38 @@ export function WorkflowNode({ id, data, children }: WorkflowNodeProps) {
             </BaseNodeHeaderTitle>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-1">
-            {/* Play button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "nodrag h-6 w-6 rounded",
-                "hover:bg-spica/10 hover:text-spica"
-              )}
-              onClick={onPlay}
-              title="Run from this node"
-            >
-              <Play className="h-3.5 w-3.5" />
-            </Button>
+          {/* Action buttons - only shown in editable mode */}
+          {isEditable && (
+            <div className="flex items-center gap-1">
+              {/* Play button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "nodrag h-6 w-6 rounded",
+                  "hover:bg-spica/10 hover:text-spica"
+                )}
+                onClick={onPlay}
+                title="Run from this node"
+              >
+                <Play className="h-3.5 w-3.5" />
+              </Button>
 
-            {/* Delete button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "nodrag h-6 w-6 rounded",
-                "hover:bg-destructive/10 hover:text-destructive"
-              )}
-              onClick={onRemove}
-              title="Delete node"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+              {/* Delete button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "nodrag h-6 w-6 rounded",
+                  "hover:bg-destructive/10 hover:text-destructive"
+                )}
+                onClick={onRemove}
+                title="Delete node"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
         </BaseNodeHeader>
 
         {/* Content - renders node-specific children */}

@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ButtonHandle } from "../../base";
-import { useCanvasStore, type CanvasStore } from "../../store";
+import { useCanvasStoreSafe, type CanvasStore } from "../../store";
 import {
   nodesConfig,
   iconMapping,
@@ -77,15 +77,14 @@ export function NodeHandle({ id, type, position, x, y }: NodeHandleProps) {
   // Check if a connection is in progress
   const isConnectionInProgress = useConnection((c) => c.inProgress);
 
-  // Store selectors
-  const selector = useCallback(
-    (state: CanvasStore) => ({
+  // Store selectors - use safe hook that works without provider
+  const { value: storeValues, isEditable } = useCanvasStoreSafe(
+    useShallow((state: CanvasStore) => ({
       draggedNodes: state.draggedNodes,
       addNodeByType: state.addNodeByType,
       connectionSites: state.connectionSites,
       potentialConnection: state.potentialConnection,
-    }),
-    []
+    }))
   );
 
   const {
@@ -93,7 +92,7 @@ export function NodeHandle({ id, type, position, x, y }: NodeHandleProps) {
     addNodeByType,
     connectionSites,
     potentialConnection,
-  } = useCanvasStore(useShallow(selector));
+  } = storeValues;
 
   // Connection ID for tracking
   const connectionId = useMemo(
@@ -105,10 +104,12 @@ export function NodeHandle({ id, type, position, x, y }: NodeHandleProps) {
   const isPotentialConnection = potentialConnection?.id === connectionId;
 
   // Show add button only when:
-  // 1. No existing connections
-  // 2. No connection being drawn
-  // 3. No nodes being dragged
+  // 1. In editable mode (has CanvasStoreProvider)
+  // 2. No existing connections
+  // 3. No connection being drawn
+  // 4. No nodes being dragged
   const displayAddButton =
+    isEditable &&
     connections.length === 0 &&
     !isConnectionInProgress &&
     !draggedNodes.has(nodeId || "");
