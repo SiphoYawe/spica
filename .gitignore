@@ -58,6 +58,10 @@ yarn-error.log*
 frontend/dist/
 frontend/dist-ssr/
 frontend/.vite/
+frontend/.next/
+
+# Old frontend backup
+frontend-old/
 
 # Backend
 backend/workflows/
