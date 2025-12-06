@@ -214,13 +214,17 @@
   --sidebar-border: #E0E0E8;
   --sidebar-ring: #00CC3A;
 
-  /* Node colors adjusted for light */
+  /* Node colors adjusted for light - slightly deeper for contrast */
+  --node-trigger: #D97706;
   --node-trigger-bg: rgba(245, 158, 11, 0.12);
   --node-trigger-border: rgba(245, 158, 11, 0.4);
+  --node-swap: #0891B2;
   --node-swap-bg: rgba(6, 182, 212, 0.12);
   --node-swap-border: rgba(6, 182, 212, 0.4);
+  --node-stake: #059669;
   --node-stake-bg: rgba(16, 185, 129, 0.12);
   --node-stake-border: rgba(16, 185, 129, 0.4);
+  --node-transfer: #2563EB;
   --node-transfer-bg: rgba(59, 130, 246, 0.12);
   --node-transfer-border: rgba(59, 130, 246, 0.4);
 
@@ -684,4 +688,105 @@
 /* Divider with glow */
 .divider-glow {
   @apply h-px bg-gradient-to-r from-transparent via-spica/30 to-transparent;
+}
+
+/* ============================================
+   PRO WORKFLOW EDITOR STYLES
+   ============================================ */
+
+/* Import React Flow base styles in the base layer */
+@layer base {
+  @import '@xyflow/react/dist/style.css';
+}
+
+/* Pro-style node selection */
+.react-flow__node.selected {
+  z-index: 10 !important;
+}
+
+/* Pro-style edge hover */
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--spica);
+  cursor: pointer;
+}
+
+/* Pro-style edge animation - smoother */
+@keyframes edge-dash-flow {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 8 8;
+  animation: edge-dash-flow 0.8s linear infinite;
+}
+
+/* Pro-style connection line */
+.react-flow__connection-path {
+  stroke: var(--spica) !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: 8 8 !important;
+}
+
+/* Pro-style handles - 11px like the template */
+.react-flow__handle {
+  width: 11px !important;
+  height: 11px !important;
+  background: var(--card) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: 50% !important;
+  transition: all 150ms ease !important;
+}
+
+.react-flow__handle:hover {
+  border-color: var(--spica) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 72, 0.5) !important;
+}
+
+.react-flow__handle.connectingto,
+.react-flow__handle.connectingfrom {
+  border-color: var(--spica) !important;
+  background: var(--spica) !important;
+}
+
+/* Pro-style attribution removal */
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* Border spinner animation for loading nodes */
+@keyframes border-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Pro-style minimap */
+.react-flow__minimap {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Sidebar node drag visual feedback */
+.sidebar-node-dragging {
+  opacity: 0.8;
+  transform: scale(0.95);
+  box-shadow: 0 8px 32px rgba(0, 255, 72, 0.2);
+}
+
+/* Pro-style panel shadows */
+.workflow-panel {
+  @apply bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg;
 }

@@ -23,6 +23,7 @@ import {
   Rocket,
 } from "lucide-react";
 import { MainNav } from "./MainNav";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function CanvasHeader() {
   const {
@@ -174,6 +175,10 @@ export function CanvasHeader() {
             </TooltipTrigger>
             <TooltipContent>Redo</TooltipContent>
           </Tooltip>
+
+          <div className="mx-1 h-4 w-px bg-border" />
+
+          <ThemeToggle />
 
           <div className="mx-1 h-4 w-px bg-border" />
 
