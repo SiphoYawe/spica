@@ -379,6 +379,115 @@ class ApiClient {
   }
 
   /**
+   * PATCH request
+   */
+  async patch<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // ========================================================================
+  // Workflow Management - Story 6.8
+  // ========================================================================
+
+  /**
+   * List all workflows
+   */
+  async listWorkflows(params?: { status?: string; user_id?: string }) {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.set('workflow_status', params.status);
+    if (params?.user_id) queryParams.set('user_id', params.user_id);
+    const query = queryParams.toString();
+
+    return this.get<{
+      success: boolean;
+      workflows: Array<{
+        workflow_id: string;
+        workflow_name: string;
+        workflow_description: string;
+        status: string;
+        enabled: boolean;
+        trigger_type: string;
+        trigger_summary: string;
+        execution_count: number;
+        created_at: string;
+        last_executed_at: string | null;
+      }>;
+      total: number;
+      timestamp: string;
+    }>(`/api/v1/workflows${query ? `?${query}` : ''}`);
+  }
+
+  /**
+   * Get workflow details
+   */
+  async getWorkflow(workflowId: string) {
+    return this.get<{
+      success: boolean;
+      workflow_id: string;
+      workflow_name: string;
+      workflow_description: string;
+      status: string;
+      enabled: boolean;
+      trigger_type: string;
+      trigger_summary: string;
+      nodes: Array<{
+        id: string;
+        type: string;
+        label: string;
+        parameters: Record<string, unknown>;
+        position: { x: number; y: number };
+        data: Record<string, unknown>;
+      }>;
+      edges: Array<{
+        id: string;
+        source: string;
+        target: string;
+        type: string;
+        animated: boolean;
+      }>;
+      execution_count: number;
+      trigger_count: number;
+      created_at: string;
+      updated_at: string;
+      last_executed_at: string | null;
+      last_error: string | null;
+      timestamp: string;
+    }>(`/api/v1/workflows/${workflowId}`);
+  }
+
+  /**
+   * Pause/Resume workflow
+   */
+  async toggleWorkflow(workflowId: string, enabled: boolean) {
+    return this.patch<{
+      success: boolean;
+      workflow_id: string;
+      status: string;
+      enabled: boolean;
+      message: string;
+      timestamp: string;
+    }>(`/api/v1/workflows/${workflowId}`, {
+      enabled,
+      status: enabled ? 'active' : 'paused',
+    });
+  }
+
+  /**
+   * Delete workflow
+   */
+  async deleteWorkflow(workflowId: string) {
+    return this.delete<{
+      success: boolean;
+      workflow_id: string;
+      message: string;
+      timestamp: string;
+    }>(`/api/v1/workflows/${workflowId}`);
+  }
+
+  /**
    * Get demo mode status
    * Returns whether the application is running in demo mode (bypasses payments)
    */
