@@ -412,4 +412,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Built for the Neo N3 + SpoonOS Hackathon**
+**Built for the Agentic Hackathon with SpoonOS and Neo at Encode Hub**
