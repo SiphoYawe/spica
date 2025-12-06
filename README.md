@@ -15,7 +15,7 @@ Spica is an intelligent workflow automation platform for Neo N3 blockchain, powe
 ### Frontend
 - **React 18** with TypeScript
 - **Vite** for fast development and building
-- **React Flow** for graph visualization (to be added)
+- **React Flow** for graph visualization
 
 ### Backend
 - **FastAPI** with Python 3.11+
