@@ -34,6 +34,24 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
+# Enums (must be defined before dataclasses that use them)
+# ============================================================================
+
+class PriceSource(Enum):
+    """Available price data sources."""
+    MOCK = "mock"
+    COINGECKO = "coingecko"
+    FLAMINGO = "flamingo"
+
+
+class TriggerCondition(str, Enum):
+    """Price trigger conditions for monitoring."""
+    ABOVE = "above"
+    BELOW = "below"
+    EQUALS = "equals"
+
+
+# ============================================================================
 # Price Data Models
 # ============================================================================
 
@@ -78,20 +96,6 @@ class PriceConditionResult:
             "condition": self.condition.value,
             "message": self.message
         }
-
-
-class PriceSource(Enum):
-    """Available price data sources."""
-    MOCK = "mock"
-    COINGECKO = "coingecko"
-    FLAMINGO = "flamingo"
-
-
-class TriggerCondition(str, Enum):
-    """Price trigger conditions for monitoring."""
-    ABOVE = "above"
-    BELOW = "below"
-    EQUALS = "equals"
 
 
 # ============================================================================
