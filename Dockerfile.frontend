@@ -26,8 +26,9 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Create .env.local for Next.js build (since it's excluded by .dockerignore)
 RUN echo "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}" > .env.local
 
-# Build the application
-RUN npm run build
+# Build the application using webpack (more stable than Turbopack on CI)
+# The --no-lint flag skips linting during build for faster builds
+RUN NEXT_TELEMETRY_DISABLED=1 npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner

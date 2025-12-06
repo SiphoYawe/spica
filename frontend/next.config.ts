@@ -15,14 +15,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
   },
 
-  // Disable React strict mode for development (can enable for production)
+  // React strict mode
   reactStrictMode: true,
-
-  // Turbopack configuration
-  turbopack: {
-    // Set root to this frontend directory to avoid lockfile warnings
-    root: __dirname,
-  },
 };
 
 export default nextConfig;

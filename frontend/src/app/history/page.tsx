@@ -29,11 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Fragment } from "react";
 import {
   History,
   Plus,
@@ -478,30 +474,33 @@ export default function HistoryPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredExecutions.map((execution) => (
-                    <Collapsible
-                      key={execution.id}
-                      open={expandedRows.has(execution.id)}
-                      onOpenChange={() => toggleRowExpanded(execution.id)}
-                      asChild
-                    >
-                      <>
+                  {filteredExecutions.map((execution) => {
+                    const isExpanded = expandedRows.has(execution.id);
+                    return (
+                      <Fragment key={execution.id}>
                         <TableRow
                           className={cn(
                             "group cursor-pointer border-border/50",
-                            expandedRows.has(execution.id) && "bg-muted/30"
+                            isExpanded && "bg-muted/30"
                           )}
+                          onClick={() => toggleRowExpanded(execution.id)}
                         >
                           <TableCell>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-6 w-6">
-                                {expandedRows.has(execution.id) ? (
-                                  <ChevronDown className="h-4 w-4" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </CollapsibleTrigger>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleRowExpanded(execution.id);
+                              }}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
                           </TableCell>
                           <TableCell>
                             <Tooltip>
@@ -515,7 +514,7 @@ export default function HistoryPage() {
                               </TooltipContent>
                             </Tooltip>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             <Link
                               href={`/workflows/${execution.workflow_id}`}
                               className="text-sm font-medium hover:text-spica transition-colors"
@@ -537,7 +536,7 @@ export default function HistoryPage() {
                               {getStatusBadge(execution.status)}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             {execution.transaction_hash ? (
                               <div className="flex items-center gap-1">
                                 <code className="text-xs font-mono text-muted-foreground truncate max-w-[100px]">
@@ -549,10 +548,7 @@ export default function HistoryPage() {
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        copyToClipboard(execution.transaction_hash!);
-                                      }}
+                                      onClick={() => copyToClipboard(execution.transaction_hash!)}
                                     >
                                       <Copy className="h-3 w-3" />
                                     </Button>
@@ -565,7 +561,6 @@ export default function HistoryPage() {
                                       href={`${NEO_EXPLORER_URL}/${execution.transaction_hash}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
                                       className="text-spica hover:text-spica/80"
                                     >
                                       <ExternalLink className="h-3 w-3" />
@@ -584,7 +579,7 @@ export default function HistoryPage() {
                             </span>
                           </TableCell>
                         </TableRow>
-                        <CollapsibleContent asChild>
+                        {isExpanded && (
                           <TableRow className="bg-muted/20 hover:bg-muted/20 border-border/50">
                             <TableCell colSpan={7} className="p-4">
                               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -656,10 +651,10 @@ export default function HistoryPage() {
                               </div>
                             </TableCell>
                           </TableRow>
-                        </CollapsibleContent>
-                      </>
-                    </Collapsible>
-                  ))}
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </TableBody>
               </Table>
 
