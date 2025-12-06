@@ -390,6 +390,443 @@ async def parse_workflow(request: ParseRequest, http_request: Request) -> ParseS
         )
 
 
+# ============================================================================
+# Workflow List Endpoint - Story 6.8
+# ============================================================================
+
+class WorkflowSummary(BaseModel):
+    """Summary view of a workflow for listing"""
+    workflow_id: str = Field(..., description="Unique workflow identifier")
+    workflow_name: str = Field(..., description="User-friendly workflow name")
+    workflow_description: str = Field(..., description="Workflow description")
+    status: str = Field(..., description="Current status (active/paused/completed/failed)")
+    enabled: bool = Field(..., description="Whether workflow is enabled")
+    trigger_type: str = Field(..., description="Trigger type (price/time)")
+    trigger_summary: str = Field(..., description="Human-readable trigger summary")
+    execution_count: int = Field(..., description="Number of successful executions")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    last_executed_at: Optional[datetime] = Field(None, description="Last execution timestamp")
+
+
+class WorkflowListResponse(BaseModel):
+    """Response for workflow listing"""
+    success: bool = Field(True, description="Always true for successful requests")
+    workflows: List[WorkflowSummary] = Field(..., description="List of workflow summaries")
+    total: int = Field(..., description="Total number of workflows")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+@router.get(
+    "/workflows",
+    response_model=WorkflowListResponse,
+    summary="List all workflows",
+    description="Get a list of all workflows, optionally filtered by status",
+    tags=["workflow"]
+)
+async def list_workflows(
+    workflow_status: Optional[str] = None,
+    user_id: Optional[str] = None,
+) -> WorkflowListResponse:
+    """
+    List all workflows with optional filtering.
+
+    Args:
+        workflow_status: Optional status filter (active, paused, completed, failed)
+        user_id: Optional user ID filter
+
+    Returns:
+        WorkflowListResponse with list of workflow summaries
+    """
+    logger.info(f"Listing workflows (status={workflow_status}, user_id={user_id})")
+
+    try:
+        storage = get_workflow_storage()
+        workflows = await storage.list_workflows(user_id=user_id, status=workflow_status)
+
+        # Convert to summaries
+        summaries = []
+        for w in workflows:
+            # Build trigger summary
+            trigger = w.assembled_graph.workflow_spec.trigger
+            if trigger:
+                if trigger.type == "price":
+                    trigger_summary = f"When {trigger.token} {trigger.operator} ${trigger.value}"
+                elif trigger.type == "time":
+                    trigger_summary = f"At {trigger.time}" if trigger.time else f"Every {trigger.interval}"
+                else:
+                    trigger_summary = f"{trigger.type} trigger"
+            else:
+                trigger_summary = "Manual execution"
+
+            summaries.append(WorkflowSummary(
+                workflow_id=w.workflow_id,
+                workflow_name=w.assembled_graph.workflow_name,
+                workflow_description=w.assembled_graph.workflow_description,
+                status=w.status,
+                enabled=w.enabled,
+                trigger_type=trigger.type if trigger else "manual",
+                trigger_summary=trigger_summary,
+                execution_count=w.execution_count,
+                created_at=w.created_at,
+                last_executed_at=w.last_executed_at,
+            ))
+
+        return WorkflowListResponse(
+            success=True,
+            workflows=summaries,
+            total=len(summaries),
+        )
+
+    except Exception as e:
+        error_id = str(uuid.uuid4())[:8]
+        logger.error(f"Failed to list workflows [error_id={error_id}]: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "Failed to list workflows",
+                    "details": f"Error ID: {error_id}",
+                    "retry": True
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+
+# ============================================================================
+# Workflow Detail Endpoint - Story 6.9
+# ============================================================================
+
+class WorkflowDetailResponse(BaseModel):
+    """Detailed workflow response"""
+    success: bool = Field(True)
+    workflow_id: str
+    workflow_name: str
+    workflow_description: str
+    status: str
+    enabled: bool
+    trigger_type: str
+    trigger_summary: str
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+    execution_count: int
+    trigger_count: int
+    created_at: datetime
+    updated_at: datetime
+    last_executed_at: Optional[datetime]
+    last_error: Optional[str]
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+@router.get(
+    "/workflows/{workflow_id}",
+    response_model=WorkflowDetailResponse,
+    summary="Get workflow details",
+    description="Get detailed information about a specific workflow",
+    tags=["workflow"]
+)
+async def get_workflow(workflow_id: str) -> WorkflowDetailResponse:
+    """
+    Get detailed workflow information.
+
+    Args:
+        workflow_id: Workflow identifier
+
+    Returns:
+        WorkflowDetailResponse with full workflow details
+    """
+    logger.info(f"Getting workflow details: {workflow_id}")
+
+    try:
+        storage = get_workflow_storage()
+        w = await storage.load_workflow(workflow_id)
+
+        # Build trigger summary
+        trigger = w.assembled_graph.workflow_spec.trigger
+        if trigger:
+            if trigger.type == "price":
+                trigger_summary = f"When {trigger.token} {trigger.operator} ${trigger.value}"
+            elif trigger.type == "time":
+                trigger_summary = f"At {trigger.time}" if trigger.time else f"Every {trigger.interval}"
+            else:
+                trigger_summary = f"{trigger.type} trigger"
+        else:
+            trigger_summary = "Manual execution"
+
+        # Convert nodes and edges
+        nodes = [n.model_dump() for n in w.assembled_graph.react_flow.nodes]
+        edges = [e.model_dump() for e in w.assembled_graph.react_flow.edges]
+
+        return WorkflowDetailResponse(
+            success=True,
+            workflow_id=w.workflow_id,
+            workflow_name=w.assembled_graph.workflow_name,
+            workflow_description=w.assembled_graph.workflow_description,
+            status=w.status,
+            enabled=w.enabled,
+            trigger_type=trigger.type if trigger else "manual",
+            trigger_summary=trigger_summary,
+            nodes=nodes,
+            edges=edges,
+            execution_count=w.execution_count,
+            trigger_count=w.trigger_count,
+            created_at=w.created_at,
+            updated_at=w.updated_at,
+            last_executed_at=w.last_executed_at,
+            last_error=w.last_error,
+        )
+
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "NOT_FOUND",
+                    "message": f"Workflow {workflow_id} not found",
+                    "retry": False
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INVALID_ID",
+                    "message": str(e),
+                    "retry": False
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+    except Exception as e:
+        error_id = str(uuid.uuid4())[:8]
+        logger.error(f"Failed to get workflow [error_id={error_id}]: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "Failed to get workflow",
+                    "details": f"Error ID: {error_id}",
+                    "retry": True
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+
+# ============================================================================
+# Workflow Pause/Resume Endpoint - Story 6.8
+# ============================================================================
+
+class UpdateWorkflowRequest(BaseModel):
+    """Request to update workflow status"""
+    enabled: Optional[bool] = Field(None, description="Enable/disable workflow")
+    status: Optional[str] = Field(None, description="New status (active/paused)")
+
+
+class UpdateWorkflowResponse(BaseModel):
+    """Response after updating workflow"""
+    success: bool = Field(True)
+    workflow_id: str
+    status: str
+    enabled: bool
+    message: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+@router.patch(
+    "/workflows/{workflow_id}",
+    response_model=UpdateWorkflowResponse,
+    summary="Update workflow",
+    description="Update workflow status (pause/resume)",
+    tags=["workflow"]
+)
+async def update_workflow(
+    workflow_id: str,
+    request: UpdateWorkflowRequest
+) -> UpdateWorkflowResponse:
+    """
+    Update workflow status (pause/resume).
+
+    Args:
+        workflow_id: Workflow identifier
+        request: Update request with new status
+
+    Returns:
+        UpdateWorkflowResponse with updated status
+    """
+    logger.info(f"Updating workflow: {workflow_id}")
+
+    try:
+        storage = get_workflow_storage()
+
+        # Build updates dict
+        updates = {}
+        if request.enabled is not None:
+            updates["enabled"] = request.enabled
+        if request.status is not None:
+            if request.status not in ("active", "paused"):
+                raise ValueError("Status must be 'active' or 'paused'")
+            updates["status"] = request.status
+
+        if not updates:
+            raise ValueError("No updates provided")
+
+        # Update workflow
+        updated = await storage.update_workflow(workflow_id, updates)
+
+        action = "resumed" if updated.enabled else "paused"
+        return UpdateWorkflowResponse(
+            success=True,
+            workflow_id=workflow_id,
+            status=updated.status,
+            enabled=updated.enabled,
+            message=f"Workflow {action} successfully",
+        )
+
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "NOT_FOUND",
+                    "message": f"Workflow {workflow_id} not found",
+                    "retry": False
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INVALID_REQUEST",
+                    "message": str(e),
+                    "retry": False
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+    except Exception as e:
+        error_id = str(uuid.uuid4())[:8]
+        logger.error(f"Failed to update workflow [error_id={error_id}]: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "Failed to update workflow",
+                    "details": f"Error ID: {error_id}",
+                    "retry": True
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+
+# ============================================================================
+# Workflow Delete Endpoint - Story 6.8
+# ============================================================================
+
+class DeleteWorkflowResponse(BaseModel):
+    """Response after deleting workflow"""
+    success: bool = Field(True)
+    workflow_id: str
+    message: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+@router.delete(
+    "/workflows/{workflow_id}",
+    response_model=DeleteWorkflowResponse,
+    summary="Delete workflow",
+    description="Delete a workflow from the system",
+    tags=["workflow"]
+)
+async def delete_workflow(workflow_id: str) -> DeleteWorkflowResponse:
+    """
+    Delete a workflow.
+
+    Args:
+        workflow_id: Workflow identifier
+
+    Returns:
+        DeleteWorkflowResponse confirming deletion
+    """
+    logger.info(f"Deleting workflow: {workflow_id}")
+
+    try:
+        storage = get_workflow_storage()
+        await storage.delete_workflow(workflow_id)
+
+        return DeleteWorkflowResponse(
+            success=True,
+            workflow_id=workflow_id,
+            message="Workflow deleted successfully",
+        )
+
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "NOT_FOUND",
+                    "message": f"Workflow {workflow_id} not found",
+                    "retry": False
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INVALID_ID",
+                    "message": str(e),
+                    "retry": False
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+    except Exception as e:
+        error_id = str(uuid.uuid4())[:8]
+        logger.error(f"Failed to delete workflow [error_id={error_id}]: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "Failed to delete workflow",
+                    "details": f"Error ID: {error_id}",
+                    "retry": True
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+
 @router.get(
     "/parse/examples",
     summary="Get example workflows",
