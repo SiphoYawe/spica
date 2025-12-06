@@ -12,8 +12,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Zap,
   ArrowLeftRight,
   Lock,
@@ -86,11 +86,12 @@ export function Sidebar() {
             size="icon"
             className="h-8 w-8"
             onClick={toggleSidebar}
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             {sidebarOpen ? (
-              <ChevronLeft className="h-4 w-4" />
+              <PanelLeftClose className="h-4 w-4" />
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <PanelLeftOpen className="h-4 w-4" />
             )}
           </Button>
         </div>
