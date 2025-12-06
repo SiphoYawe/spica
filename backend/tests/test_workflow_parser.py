@@ -8,6 +8,9 @@ import pytest
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
+# Skip entire module if spoon_ai not available
+pytest.importorskip("spoon_ai", reason="spoon_ai package not installed")
+
 from app.agents.workflow_parser import (
     WorkflowParserAgent,
     create_workflow_parser,

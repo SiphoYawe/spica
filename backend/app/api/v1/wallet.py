@@ -26,7 +26,7 @@ router = APIRouter(prefix="/wallet", tags=["wallet"])
     Get demo wallet address and balances.
 
     This endpoint returns the public address and token balances for the demo wallet
-    used to execute workflows. The wallet private key is NEVER exposed.
+    used to execute workflows. Sensitive credentials are NOT included in responses.
 
     Returns balances for:
     - GAS (with 8 decimals)

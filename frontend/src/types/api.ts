@@ -92,3 +92,59 @@ export interface CapabilitiesResponse {
   supported_actions: string[];
   supported_triggers: string[];
 }
+
+// Graph Generation Types (Story 3.3/3.4)
+export interface GraphNode {
+  id: string;
+  type: string; // "trigger", "swap", "stake", "transfer"
+  label: string;
+  parameters?: Record<string, unknown>;
+  position: {
+    x: number;
+    y: number;
+  };
+  data: {
+    label: string;
+    icon: string;
+    status?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  type: string; // "default", "smoothstep", etc.
+  animated?: boolean;
+}
+
+export interface GenerateRequest {
+  workflow_spec: WorkflowSpec;
+  user_id?: string;
+  user_address?: string;
+}
+
+export interface GenerateSuccessResponse {
+  success: true;
+  workflow_id: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  workflow_name: string;
+  workflow_description: string;
+  generation_time_ms: number;
+  sla_exceeded: boolean;
+  timestamp: string;
+}
+
+export interface GenerateErrorResponse {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: string;
+    retry?: boolean;
+  };
+}
+
+export type GenerateResponse = GenerateSuccessResponse | GenerateErrorResponse;

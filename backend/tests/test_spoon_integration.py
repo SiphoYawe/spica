@@ -18,6 +18,9 @@ import asyncio
 from typing import TypedDict
 import logging
 
+# Skip entire module if spoon_ai not available
+pytest.importorskip("spoon_ai", reason="spoon_ai package not installed")
+
 # Test imports - if these fail, SpoonOS is not properly installed
 from spoon_ai.chat import ChatBot
 from spoon_ai.agents import SpoonReactMCP, SpoonReactAI

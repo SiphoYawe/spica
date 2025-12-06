@@ -1,0 +1,151 @@
+{
+  "workflow_id": "wf_37a98c68c0d0",
+  "user_id": "test_user",
+  "user_address": "NTest123...",
+  "assembled_graph": {
+    "workflow_id": "wf_37a98c68c0d0",
+    "workflow_name": "Weekly Portfolio Rebalance",
+    "workflow_description": "Every Monday at 10am, swap 30% GAS to NEO and stake it all",
+    "react_flow": {
+      "nodes": [
+        {
+          "id": "trigger_1",
+          "type": "trigger",
+          "label": "Every Monday at 10:00 AM",
+          "parameters": {
+            "type": "time",
+            "schedule": "every Monday at 10am"
+          },
+          "position": {
+            "x": 250,
+            "y": 0
+          },
+          "data": {
+            "label": "Every Monday at 10:00 AM",
+            "icon": "trigger",
+            "status": "pending"
+          }
+        },
+        {
+          "id": "action_1",
+          "type": "swap",
+          "label": "Swap 30.0% GAS → NEO",
+          "parameters": {
+            "type": "swap",
+            "from_token": "GAS",
+            "to_token": "NEO",
+            "amount": null,
+            "percentage": 30.0
+          },
+          "position": {
+            "x": 250,
+            "y": 150
+          },
+          "data": {
+            "label": "Swap 30.0% GAS → NEO",
+            "icon": "swap",
+            "status": "pending"
+          }
+        },
+        {
+          "id": "action_2",
+          "type": "stake",
+          "label": "Stake 100.0% NEO",
+          "parameters": {
+            "type": "stake",
+            "token": "NEO",
+            "amount": null,
+            "percentage": 100.0
+          },
+          "position": {
+            "x": 250,
+            "y": 300
+          },
+          "data": {
+            "label": "Stake 100.0% NEO",
+            "icon": "stake",
+            "status": "pending"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "trigger_1",
+          "target": "action_1",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e2",
+          "source": "action_1",
+          "target": "action_2",
+          "type": "default",
+          "animated": false
+        }
+      ]
+    },
+    "state_graph_config": {
+      "trigger": {
+        "type": "time",
+        "params": {
+          "type": "time",
+          "schedule": "every Monday at 10am"
+        }
+      },
+      "steps": [
+        {
+          "action_type": "swap",
+          "params": {
+            "type": "swap",
+            "from_token": "GAS",
+            "to_token": "NEO",
+            "amount": null,
+            "percentage": 30.0
+          },
+          "description": "Swap 30% of GAS to NEO"
+        },
+        {
+          "action_type": "stake",
+          "params": {
+            "type": "stake",
+            "token": "NEO",
+            "amount": null,
+            "percentage": 100.0
+          },
+          "description": "Stake all NEO"
+        }
+      ],
+      "node_count": 3,
+      "initial_state": {
+        "workflow_id": "wf_37a98c68c0d0",
+        "trigger_type": "time",
+        "trigger_params": {
+          "type": "time",
+          "schedule": "every Monday at 10am"
+        },
+        "current_step": 0,
+        "total_steps": 2,
+        "completed_steps": [],
+        "step_results": [],
+        "workflow_status": "pending",
+        "error": null,
+        "metadata": {
+          "workflow_name": "Weekly Portfolio Rebalance",
+          "created_at": "2025-12-06T05:31:55.923282+00:00"
+        }
+      }
+    },
+    "created_at": "2025-12-06T05:31:55.923288+00:00",
+    "version": "1.0"
+  },
+  "status": "active",
+  "enabled": true,
+  "trigger_count": 0,
+  "execution_count": 0,
+  "last_triggered_at": null,
+  "last_executed_at": null,
+  "last_error": null,
+  "created_at": "2025-12-06T05:31:55.923293+00:00",
+  "updated_at": "2025-12-06T05:31:55.923294+00:00"
+}

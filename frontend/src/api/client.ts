@@ -111,6 +111,16 @@ class ApiClient {
   }
 
   /**
+   * PUT request
+   */
+  async put<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  /**
    * DELETE request
    */
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
@@ -203,6 +213,63 @@ class ApiClient {
       supported_actions: string[];
       supported_triggers: string[];
     }>('/api/v1/parse/capabilities');
+  }
+
+  /**
+   * Generate workflow graph from workflow spec
+   */
+  async generateWorkflow(workflowSpec: unknown, userId?: string, userAddress?: string) {
+    return this.post<{
+      success: boolean;
+      workflow_id?: string;
+      nodes?: Array<{
+        id: string;
+        type: string;
+        label: string;
+        parameters?: Record<string, unknown>;
+        position: { x: number; y: number };
+        data: Record<string, unknown>;
+      }>;
+      edges?: Array<{
+        id: string;
+        source: string;
+        target: string;
+        type: string;
+        animated?: boolean;
+      }>;
+      workflow_name?: string;
+      workflow_description?: string;
+      generation_time_ms?: number;
+      sla_exceeded?: boolean;
+      timestamp?: string;
+      error?: {
+        code: string;
+        message: string;
+        details?: string;
+        retry?: boolean;
+      };
+    }>('/api/v1/generate', {
+      workflow_spec: workflowSpec,
+      user_id: userId,
+      user_address: userAddress,
+    });
+  }
+
+  /**
+   * Update workflow with modified nodes/edges
+   */
+  async updateWorkflow(workflowId: string, data: { nodes: unknown[]; edges: unknown[] }) {
+    return this.put<{
+      success: boolean;
+      workflow_id: string;
+      message?: string;
+      timestamp?: string;
+      error?: {
+        code: string;
+        message: string;
+        details?: string;
+      };
+    }>(`/api/v1/workflows/${workflowId}`, data);
   }
 }
 

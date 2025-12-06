@@ -181,9 +181,10 @@ class WalletService:
 
             # Return a deterministic address based on WIF hash (for demo purposes)
             # This won't match the real address, but allows testing without neo-mamba
+            # Neo N3 addresses are 34 characters long
             import hashlib
-            wif_hash = hashlib.sha256(wif.encode()).hexdigest()[:8]
-            return f"N{wif_hash}Demo{wif_hash[:4]}"
+            wif_hash = hashlib.sha256(wif.encode()).hexdigest()[:32]
+            return f"N{wif_hash}"  # 33 characters total (N + 32 hex chars)
         except Exception as e:
             raise ValueError(f"Invalid WIF format: {e}")
 

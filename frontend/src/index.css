@@ -39,6 +39,7 @@
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
   --animate-spin: spin 1s linear infinite;
   --animate-slide-up: slide-up 0.5s ease-out backwards;
+  --animate-slide-in-right: slide-in-right 0.3s ease-out;
   --animate-stream-flow: stream-flow 2s ease-in-out infinite;
   --animate-loading-pulse: loading-pulse 1.5s ease-in-out infinite;
   --animate-text-pulse: text-pulse 2s ease-in-out infinite;
@@ -73,6 +74,17 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
     }
   }
 
@@ -127,6 +139,12 @@ h1 {
 .sr-only {
   @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
   clip: rect(0, 0, 0, 0);
+}
+
+/* ReactFlow Edge Styling - Issue #1 fix: Tailwind-only approach */
+.react-flow__edge-path {
+  @apply stroke-cyber-blue/60;
+  stroke-width: 2;
 }
 
 /* Reduced Motion */

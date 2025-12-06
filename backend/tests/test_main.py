@@ -29,5 +29,6 @@ def test_health_endpoint(client):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert "services" in data
-    assert data["services"]["api"] == "ok"
+    # Legacy endpoint just returns status, message, and timestamp
+    assert "message" in data
+    assert "timestamp" in data

@@ -576,7 +576,10 @@ class TestDesignerIntegration:
     @pytest.mark.asyncio
     async def test_end_to_end_workflow_design(self):
         """Test complete workflow: parse → design nodes"""
-        from app.agents import create_workflow_parser
+        from app.agents import create_workflow_parser, SPOON_AI_AVAILABLE
+
+        if not SPOON_AI_AVAILABLE:
+            pytest.skip("spoon_ai not available")
 
         # Parse a workflow from natural language
         parser = create_workflow_parser()
@@ -606,7 +609,10 @@ class TestDesignerIntegration:
     @pytest.mark.asyncio
     async def test_multi_step_end_to_end(self):
         """Test multi-step workflow: parse → design"""
-        from app.agents import create_workflow_parser
+        from app.agents import create_workflow_parser, SPOON_AI_AVAILABLE
+
+        if not SPOON_AI_AVAILABLE:
+            pytest.skip("spoon_ai not available")
 
         parser = create_workflow_parser()
         parse_result = await parser.parse_workflow(
