@@ -22,6 +22,7 @@ import {
   Loader2,
   Rocket,
 } from "lucide-react";
+import { MainNav } from "./MainNav";
 
 export function CanvasHeader() {
   const {
@@ -47,26 +48,31 @@ export function CanvasHeader() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="flex h-12 items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm px-4">
-        {/* Left: Workflow info */}
+      <div className="flex h-14 items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm px-4">
+        {/* Left: Main Navigation */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-medium">
-              {workflowName || "Untitled Workflow"}
-            </h2>
-            {workflowId && (
-              <Badge variant="outline" className="text-[10px] font-mono">
-                {workflowId.slice(0, 8)}
-              </Badge>
-            )}
-          </div>
+          <MainNav />
 
+          {/* Workflow info - only show on Create tab when there's a workflow */}
           {hasWorkflow && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>{nodes.length} nodes</span>
-              <span className="text-border">•</span>
-              <span>{edges.length} connections</span>
-            </div>
+            <>
+              <div className="h-6 w-px bg-border/50" />
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-medium text-muted-foreground">
+                  {workflowName || "Untitled Workflow"}
+                </h2>
+                {workflowId && (
+                  <Badge variant="outline" className="text-[10px] font-mono">
+                    {workflowId.slice(0, 8)}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span>{nodes.length} nodes</span>
+                <span className="text-border">•</span>
+                <span>{edges.length} connections</span>
+              </div>
+            </>
           )}
         </div>
 
