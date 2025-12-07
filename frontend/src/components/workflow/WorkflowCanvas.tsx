@@ -22,7 +22,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { nanoid } from "nanoid";
 
-import { useWorkflowStore, useUiStore } from "@/stores";
+import { useWorkflowStore, useUiStore, type GraphNode } from "@/stores";
 import { nodeTypes } from "./nodes";
 import { NLInput } from "./NLInput";
 import { NODE_SIZE, nodesConfig, type SpicaNodeType } from "./config";
@@ -257,7 +257,7 @@ export function WorkflowCanvas() {
 
   // Wrap onNodesChange to sync removals to the workflow store
   const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
+    (changes: NodeChange<GraphNode>[]) => {
       // Apply changes to local state
       onNodesChangeBase(changes);
 
