@@ -1536,7 +1536,6 @@ async def activate_workflow_from_canvas(
             NodePosition,
             StoredWorkflow,
         )
-        from app.models.workflow_models import WorkflowSpec, TriggerSpec
 
         # Generate workflow ID
         workflow_id = f"wf_{uuid.uuid4().hex[:12]}"
@@ -1544,6 +1543,7 @@ async def activate_workflow_from_canvas(
         # Convert canvas nodes to GraphNodes
         graph_nodes = []
         trigger_node = None
+        action_nodes = []
         for node in request.nodes:
             pos = NodePosition(
                 x=int(node.position.get("x", 0)),
@@ -1560,6 +1560,8 @@ async def activate_workflow_from_canvas(
             graph_nodes.append(graph_node)
             if node.type == "trigger":
                 trigger_node = node
+            else:
+                action_nodes.append(node)
 
         # Convert canvas edges to GraphEdges
         graph_edges = [
@@ -1581,30 +1583,35 @@ async def activate_workflow_from_canvas(
         trigger_params = {"schedule": "daily at 9am"}
         if trigger_node:
             trigger_type = trigger_node.data.get("type", "time")
-            trigger_params = {k: v for k, v in trigger_node.data.items() if k != "label"}
+            trigger_params = {k: v for k, v in trigger_node.data.items() if k not in ["label", "icon", "status"]}
+            # Ensure schedule exists for time triggers
+            if trigger_type == "time" and "schedule" not in trigger_params:
+                trigger_params["schedule"] = "daily at 9am"
 
-        # Create minimal WorkflowSpec
-        workflow_spec = WorkflowSpec(
-            intent=request.workflow_description or request.workflow_name,
-            name=request.workflow_name,
-            trigger=TriggerSpec(type=trigger_type, **trigger_params),
-            steps=[]
-        )
+        # Build steps from action nodes
+        steps = []
+        for action_node in action_nodes:
+            step = {
+                "action_type": action_node.type,
+                "params": {k: v for k, v in action_node.data.items() if k not in ["label", "icon", "status"]},
+                "description": action_node.data.get("label", f"{action_node.type} action")
+            }
+            steps.append(step)
 
-        # Create state graph config
+        # Create state graph config (this is what list_workflows uses for trigger info)
         state_graph_config = {
             "trigger": {
                 "type": trigger_type,
                 "params": trigger_params
             },
-            "steps": [],
+            "steps": steps,
             "node_count": len(graph_nodes),
             "initial_state": {
                 "workflow_id": workflow_id,
                 "trigger_type": trigger_type,
                 "trigger_params": trigger_params,
                 "current_step": 0,
-                "total_steps": len(graph_nodes) - 1,
+                "total_steps": len(action_nodes),
                 "completed_steps": [],
                 "step_results": [],
                 "workflow_status": "pending",
@@ -1616,12 +1623,12 @@ async def activate_workflow_from_canvas(
             }
         }
 
-        # Create AssembledGraph
+        # Create AssembledGraph (workflow_spec=None, use state_graph_config for trigger info)
         assembled = AssembledGraph(
             workflow_id=workflow_id,
             workflow_name=request.workflow_name,
             workflow_description=request.workflow_description or f"Workflow created from canvas",
-            workflow_spec=workflow_spec,
+            workflow_spec=None,  # Skip WorkflowSpec validation, use state_graph_config instead
             react_flow=react_flow,
             state_graph_config=state_graph_config
         )
