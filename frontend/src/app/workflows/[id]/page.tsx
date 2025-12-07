@@ -73,7 +73,14 @@ export default function WorkflowDetailPage() {
     try {
       const result = await apiClient.getWorkflow(workflowId);
       if (result.success && result.data) {
-        setWorkflow(result.data as unknown as WorkflowDetail);
+        // Check for backend success (not an error response)
+        if (result.data.success !== false && result.data.workflow_id) {
+          setWorkflow(result.data as unknown as WorkflowDetail);
+        } else {
+          // Handle backend error response structure
+          const backendError = result.data as unknown as { error?: { message?: string } };
+          setError(backendError.error?.message || "Failed to load workflow");
+        }
       } else {
         setError(result.error?.message || "Failed to load workflow");
       }
@@ -240,7 +247,7 @@ export default function WorkflowDetailPage() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3">
-                  <h1 className="text-lg font-semibold truncate">{workflow.workflow_name}</h1>
+                  <h1 className="text-xl font-semibold truncate">{workflow.workflow_name}</h1>
                   <Badge
                     variant="outline"
                     className={cn(
@@ -253,7 +260,7 @@ export default function WorkflowDetailPage() {
                     {isActive ? "Active" : "Paused"}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-base text-muted-foreground truncate">
                   {workflow.workflow_description}
                 </p>
               </div>
@@ -295,25 +302,25 @@ export default function WorkflowDetailPage() {
                 {/* Trigger Card */}
                 <Card className="bg-card/50 backdrop-blur-sm">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
                       <Zap className="h-4 w-4 text-amber-500" />
                       Trigger Configuration
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Type</span>
-                      <Badge variant="secondary" className="text-xs">
+                      <span className="text-sm text-muted-foreground">Type</span>
+                      <Badge variant="secondary" className="text-sm">
                         {workflow.trigger_type}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Condition</span>
-                      <span className="text-xs font-mono">{workflow.trigger_summary}</span>
+                      <span className="text-sm text-muted-foreground">Condition</span>
+                      <span className="text-sm font-mono">{workflow.trigger_summary}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Trigger Count</span>
-                      <span className="text-xs font-mono">{workflow.trigger_count}</span>
+                      <span className="text-sm text-muted-foreground">Trigger Count</span>
+                      <span className="text-sm font-mono">{workflow.trigger_count}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -321,40 +328,40 @@ export default function WorkflowDetailPage() {
                 {/* Stats Card */}
                 <Card className="bg-card/50 backdrop-blur-sm">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
                       <Activity className="h-4 w-4 text-spica" />
                       Statistics
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Executions</span>
-                      <span className="text-xs font-mono">{workflow.execution_count}</span>
+                      <span className="text-sm text-muted-foreground">Executions</span>
+                      <span className="text-sm font-mono">{workflow.execution_count}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Created</span>
+                      <span className="text-sm text-muted-foreground">Created</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-xs">{formatDate(workflow.created_at)}</span>
+                          <span className="text-sm">{formatDate(workflow.created_at)}</span>
                         </TooltipTrigger>
                         <TooltipContent>{workflow.created_at}</TooltipContent>
                       </Tooltip>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Last Updated</span>
+                      <span className="text-sm text-muted-foreground">Last Updated</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-xs">{formatDate(workflow.updated_at)}</span>
+                          <span className="text-sm">{formatDate(workflow.updated_at)}</span>
                         </TooltipTrigger>
                         <TooltipContent>{workflow.updated_at}</TooltipContent>
                       </Tooltip>
                     </div>
                     {workflow.last_executed_at && (
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Last Executed</span>
+                        <span className="text-sm text-muted-foreground">Last Executed</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="text-xs">{formatDate(workflow.last_executed_at)}</span>
+                            <span className="text-sm">{formatDate(workflow.last_executed_at)}</span>
                           </TooltipTrigger>
                           <TooltipContent>{workflow.last_executed_at}</TooltipContent>
                         </Tooltip>
@@ -362,7 +369,7 @@ export default function WorkflowDetailPage() {
                     )}
                     {workflow.last_error && (
                       <div className="pt-2 border-t border-border/50">
-                        <span className="text-xs text-destructive">
+                        <span className="text-sm text-destructive">
                           Error: {workflow.last_error}
                         </span>
                       </div>
@@ -373,7 +380,7 @@ export default function WorkflowDetailPage() {
                 {/* Parameters Card */}
                 <Card className="bg-card/50 backdrop-blur-sm">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
                       <Settings2 className="h-4 w-4 text-blue-500" />
                       Step Parameters
                     </CardTitle>
@@ -385,17 +392,17 @@ export default function WorkflowDetailPage() {
                         .map((node, index) => (
                           <div
                             key={node.id}
-                            className="p-2 rounded bg-muted/30 border border-border/50"
+                            className="p-3 rounded bg-muted/30 border border-border/50"
                           >
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-medium text-muted-foreground">
+                              <span className="text-sm font-medium text-muted-foreground">
                                 Step {index + 1}
                               </span>
-                              <Badge variant="outline" className="text-[10px]">
+                              <Badge variant="outline" className="text-xs">
                                 {node.type}
                               </Badge>
                             </div>
-                            <div className="text-xs font-mono text-muted-foreground">
+                            <div className="text-sm font-mono text-muted-foreground">
                               {node.data?.label as string || node.type}
                             </div>
                           </div>
@@ -410,7 +417,7 @@ export default function WorkflowDetailPage() {
                 {/* Graph */}
                 <Card className="bg-card/50 backdrop-blur-sm overflow-hidden">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium">Workflow Graph</CardTitle>
+                    <CardTitle className="text-base font-medium">Workflow Graph</CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="h-[350px] border-t border-border/50">
@@ -424,12 +431,12 @@ export default function WorkflowDetailPage() {
                   <Tabs defaultValue="executions" className="w-full">
                     <CardHeader className="pb-0">
                       <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="executions" className="gap-2">
-                          <History className="h-3.5 w-3.5" />
+                        <TabsTrigger value="executions" className="gap-2 text-sm">
+                          <History className="h-4 w-4" />
                           Executions
                         </TabsTrigger>
-                        <TabsTrigger value="activity" className="gap-2">
-                          <Clock className="h-3.5 w-3.5" />
+                        <TabsTrigger value="activity" className="gap-2 text-sm">
+                          <Clock className="h-4 w-4" />
                           Activity
                         </TabsTrigger>
                       </TabsList>
