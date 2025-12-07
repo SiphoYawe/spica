@@ -13,6 +13,7 @@ import {
 } from "../../base";
 import { NODE_SIZE, nodesConfig, iconMapping, type SpicaNodeType, type WorkflowNodeData } from "../../config";
 import { useCanvasStoreSafe } from "../../store";
+import { useWorkflowStore } from "@/stores";
 
 export interface WorkflowNodeProps {
   id: string;
@@ -34,10 +35,11 @@ export interface WorkflowNodeProps {
  * read-only mode (without provider). In read-only mode, action buttons are hidden.
  */
 export function WorkflowNode({ id, data, children }: WorkflowNodeProps) {
-  // Use safe hook that works with or without CanvasStoreProvider
-  const { value: removeNode, isEditable } = useCanvasStoreSafe(
-    (s) => s.removeNode
-  );
+  // Use the workflow store's removeNode to ensure proper state sync
+  const removeNodeFromStore = useWorkflowStore((s) => s.removeNode);
+
+  // Check if we're in editable mode via canvas store context
+  const { isEditable } = useCanvasStoreSafe((s) => s.removeNode);
 
   // Get node type from data or infer from icon
   const nodeType = data.icon as SpicaNodeType | undefined;
@@ -65,8 +67,8 @@ export function WorkflowNode({ id, data, children }: WorkflowNodeProps) {
 
   // Handle delete button click
   const onRemove = useCallback(() => {
-    removeNode(id);
-  }, [id, removeNode]);
+    removeNodeFromStore(id);
+  }, [id, removeNodeFromStore]);
 
   return (
     <NodeStatusIndicator status={status} variant="overlay">

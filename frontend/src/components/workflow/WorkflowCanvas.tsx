@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -15,6 +15,8 @@ import {
   type Connection,
   type ColorMode,
   type XYPosition,
+  type NodeChange,
+  type EdgeChange,
   addEdge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -227,6 +229,7 @@ export function WorkflowCanvas() {
     setEdges: setStoreEdges,
     setNodes: setStoreNodes,
     addNode,
+    removeNode,
     addEdge: addStoreEdge,
     setSelectedNodeId,
     isGenerating,
@@ -240,21 +243,58 @@ export function WorkflowCanvas() {
   } = useUiStore();
 
   // Local ReactFlow state synced with store
-  const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
+  const [nodes, setNodes, onNodesChangeBase] = useNodesState(storeNodes);
+  const [edges, setEdges, onEdgesChangeBase] = useEdgesState(storeEdges);
 
   // Sync store nodes to local state when they change
-  useMemo(() => {
-    if (storeNodes.length > 0) {
-      setNodes(storeNodes);
-    }
+  useEffect(() => {
+    setNodes(storeNodes);
   }, [storeNodes, setNodes]);
 
-  useMemo(() => {
-    if (storeEdges.length > 0) {
-      setEdges(storeEdges);
-    }
+  useEffect(() => {
+    setEdges(storeEdges);
   }, [storeEdges, setEdges]);
+
+  // Wrap onNodesChange to sync removals to the workflow store
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      // Apply changes to local state
+      onNodesChangeBase(changes);
+
+      // Sync removals to the workflow store
+      changes.forEach((change) => {
+        if (change.type === "remove") {
+          removeNode(change.id);
+        }
+      });
+    },
+    [onNodesChangeBase, removeNode]
+  );
+
+  // Wrap onEdgesChange to sync removals to the workflow store
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      // Apply changes to local state
+      onEdgesChangeBase(changes);
+
+      // When edges are removed, sync to store
+      const removeChanges = changes.filter((c) => c.type === "remove");
+      if (removeChanges.length > 0) {
+        // Get current edges after applying changes and sync to store
+        setEdges((currentEdges) => {
+          const remainingEdgeIds = new Set(
+            removeChanges.map((c) => c.id)
+          );
+          const filteredEdges = currentEdges.filter(
+            (e) => !remainingEdgeIds.has(e.id)
+          );
+          setStoreEdges(filteredEdges);
+          return currentEdges; // Let ReactFlow handle the actual removal
+        });
+      }
+    },
+    [onEdgesChangeBase, setEdges, setStoreEdges]
+  );
 
   // Handle new connections
   const onConnect = useCallback(
