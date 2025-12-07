@@ -3,6 +3,7 @@ TriggerDesignerAgent - Designs trigger nodes (price/time conditions)
 """
 
 import logging
+import re
 from typing import Optional, Union
 
 from app.models.workflow_models import PriceCondition, TimeCondition, TriggerCondition
@@ -57,8 +58,13 @@ class TriggerDesignerAgent(BaseDesignerAgent):
         else:
             label = f"Trigger: {component.type}"
 
-        # Extract parameters
+        # Extract parameters and add frontend-compatible fields
         parameters = component.model_dump()
+
+        # For time triggers, parse schedule into structured fields for frontend
+        if isinstance(component, TimeCondition):
+            parsed_time = self._parse_time_schedule(component.schedule)
+            parameters.update(parsed_time)
 
         # Create and return node spec
         return self._create_node_spec(
@@ -139,6 +145,93 @@ class TriggerDesignerAgent(BaseDesignerAgent):
 
         # If we can't parse it nicely, capitalize it properly
         return schedule.title()
+
+    def _parse_time_schedule(self, schedule: str) -> dict:
+        """
+        Parse a time schedule string into structured fields for frontend.
+
+        The frontend expects:
+        - interval: "daily", "weekly", "monthly"
+        - dayOfWeek: "monday", "tuesday", etc. (for weekly)
+        - dayOfMonth: 1-28 (for monthly)
+        - time: "HH:MM" format
+
+        Args:
+            schedule: Natural language schedule like "every Monday at 9am"
+
+        Returns:
+            dict with structured time fields
+        """
+        schedule_lower = schedule.lower().strip()
+        result = {
+            "interval": "daily",
+            "time": "09:00",
+        }
+
+        # Parse interval
+        if "weekly" in schedule_lower or "every monday" in schedule_lower or "every tuesday" in schedule_lower or \
+           "every wednesday" in schedule_lower or "every thursday" in schedule_lower or "every friday" in schedule_lower or \
+           "every saturday" in schedule_lower or "every sunday" in schedule_lower:
+            result["interval"] = "weekly"
+
+            # Determine day of week
+            days = {
+                "monday": "monday", "tuesday": "tuesday", "wednesday": "wednesday",
+                "thursday": "thursday", "friday": "friday", "saturday": "saturday", "sunday": "sunday"
+            }
+            for day_name, day_value in days.items():
+                if day_name in schedule_lower:
+                    result["dayOfWeek"] = day_value
+                    break
+            else:
+                result["dayOfWeek"] = "monday"  # Default
+
+        elif "monthly" in schedule_lower:
+            result["interval"] = "monthly"
+            result["dayOfMonth"] = 1  # Default
+
+            # Try to extract day number
+            day_match = re.search(r'(\d+)(st|nd|rd|th)?', schedule_lower)
+            if day_match:
+                day = int(day_match.group(1))
+                if 1 <= day <= 28:
+                    result["dayOfMonth"] = day
+
+        else:
+            result["interval"] = "daily"
+
+        # Parse time
+        # Match patterns like "9am", "10:30am", "14:00", "at 9am"
+        time_patterns = [
+            r'(\d{1,2}):(\d{2})\s*(am|pm)',  # 9:00am, 10:30pm
+            r'(\d{1,2})(am|pm)',              # 9am, 10pm
+            r'(\d{1,2}):(\d{2})',              # 14:00, 09:30 (24h format)
+        ]
+
+        for pattern in time_patterns:
+            match = re.search(pattern, schedule_lower)
+            if match:
+                groups = match.groups()
+                if len(groups) == 3:  # 9:00am format
+                    hour, minute, period = int(groups[0]), groups[1], groups[2]
+                    if period == "pm" and hour != 12:
+                        hour += 12
+                    elif period == "am" and hour == 12:
+                        hour = 0
+                    result["time"] = f"{hour:02d}:{minute}"
+                elif len(groups) == 2:
+                    if groups[1] in ("am", "pm"):  # 9am format
+                        hour, period = int(groups[0]), groups[1]
+                        if period == "pm" and hour != 12:
+                            hour += 12
+                        elif period == "am" and hour == 12:
+                            hour = 0
+                        result["time"] = f"{hour:02d}:00"
+                    else:  # 14:00 format
+                        result["time"] = f"{int(groups[0]):02d}:{groups[1]}"
+                break
+
+        return result
 
     def _format_time(self, time_str: str) -> str:
         """

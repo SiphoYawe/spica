@@ -302,7 +302,9 @@ class TestSwapDesignerAgent:
 
         # Validate parameters
         assert node.parameters["percentage"] == 75.0
-        assert node.parameters["amount"] is None
+        # amount is now normalized to percentage value for frontend compatibility
+        assert node.parameters["amount"] == 75.0
+        assert node.parameters["amountType"] == "percentage"
 
 
 # ============================================================================

@@ -51,8 +51,15 @@ class TransferDesignerAgent(BaseDesignerAgent):
         # Create label
         label = self._create_transfer_label(component)
 
-        # Extract parameters
+        # Extract parameters and add frontend-compatible fields
         parameters = component.model_dump()
+
+        # Add amountType for frontend compatibility
+        parameters["amountType"] = "percentage" if component.percentage is not None else "fixed"
+
+        # Normalize amount field - frontend expects single "amount" field
+        if component.percentage is not None:
+            parameters["amount"] = component.percentage
 
         # Create and return node spec
         return self._create_node_spec(

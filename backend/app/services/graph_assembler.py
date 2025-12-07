@@ -43,6 +43,33 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
+# Execution Error Classes (Task 3.4)
+# ============================================================================
+
+class WorkflowExecutionError(Exception):
+    """Base exception for workflow execution errors."""
+    def __init__(self, message: str, step: int = None, recoverable: bool = False):
+        self.step = step
+        self.recoverable = recoverable
+        super().__init__(message)
+
+
+class InsufficientBalanceError(WorkflowExecutionError):
+    """Raised when user doesn't have enough tokens."""
+    pass
+
+
+class TransactionFailedError(WorkflowExecutionError):
+    """Raised when a blockchain transaction fails."""
+    pass
+
+
+class TriggerEvaluationError(WorkflowExecutionError):
+    """Raised when trigger evaluation fails."""
+    pass
+
+
+# ============================================================================
 # GraphAssembler Service
 # ============================================================================
 
@@ -100,6 +127,7 @@ class GraphAssembler:
         logger.info(f"Assembling React Flow graph from {len(nodes)} nodes")
 
         # Convert NodeSpecification to GraphNode
+        # Merge parameters into data so frontend has access to all node configuration
         graph_nodes = [
             GraphNode(
                 id=node.id,
@@ -107,7 +135,10 @@ class GraphAssembler:
                 label=node.label,
                 parameters=node.parameters,
                 position=NodePosition(x=node.position.x, y=node.position.y),
-                data=node.data.model_dump()
+                data={
+                    **node.data.model_dump(),  # label, icon, status
+                    **node.parameters,          # token, amount, percentage, etc.
+                }
             )
             for node in nodes
         ]
@@ -253,6 +284,8 @@ class GraphAssembler:
         """
         Create trigger evaluation node function.
 
+        Task 2.3: Real Price Trigger Evaluation
+
         Args:
             trigger: PriceCondition or TimeCondition
 
@@ -265,30 +298,106 @@ class GraphAssembler:
             """
             Evaluate trigger condition.
 
-            For now, this is a placeholder that logs the trigger check.
-            In production, this would:
-            - For price triggers: Check current price against condition
-            - For time triggers: Validate schedule and timing
+            For price triggers: Check current price against condition using PriceMonitorService
+            For time triggers: Validate schedule and timing (placeholder)
 
             Returns:
-                State updates
+                State updates with workflow_status: "running" if triggered, "waiting" if not
             """
             logger.info(f"Evaluating {trigger_type} trigger")
 
-            # Update state
             # Type-safe metadata merge
             existing_metadata = state.get("metadata", {})
             if not isinstance(existing_metadata, dict):
                 existing_metadata = {}
 
-            return {
-                "workflow_status": "running",
-                "metadata": {
-                    **existing_metadata,
-                    "trigger_evaluated_at": datetime.now(timezone.utc).isoformat(),
-                    "trigger_type": trigger_type,
-                }
+            # Base metadata
+            base_metadata = {
+                **existing_metadata,
+                "trigger_evaluated_at": datetime.now(timezone.utc).isoformat(),
+                "trigger_type": trigger_type,
             }
+
+            # Task 2.3: Real price trigger evaluation
+            if trigger_type == "price":
+                from app.services.price_monitor import get_price_monitor, TriggerCondition
+                from app.models.workflow_models import TokenType
+
+                try:
+                    # Get price monitor service
+                    price_monitor = await get_price_monitor()
+
+                    # Extract trigger parameters
+                    token = TokenType(trigger.token)
+                    condition = TriggerCondition(trigger.condition)
+                    target_price = float(trigger.value)
+
+                    # Check price condition
+                    result = await price_monitor.check_price_condition(
+                        token=token,
+                        condition=condition,
+                        target_price=target_price
+                    )
+
+                    logger.info(
+                        f"Price condition check: {result.message} "
+                        f"(met={result.condition_met})"
+                    )
+
+                    # Update state based on condition result
+                    if result.condition_met:
+                        # Trigger activated - proceed to actions
+                        return {
+                            "workflow_status": "running",
+                            "metadata": {
+                                **base_metadata,
+                                "trigger_activated": True,
+                                "price_data": result.current_price.to_dict(),
+                                "condition_met": True,
+                                "trigger_message": result.message,
+                            }
+                        }
+                    else:
+                        # Condition not met - stay in waiting state
+                        return {
+                            "workflow_status": "waiting",
+                            "metadata": {
+                                **base_metadata,
+                                "trigger_activated": False,
+                                "price_data": result.current_price.to_dict(),
+                                "condition_met": False,
+                                "trigger_message": result.message,
+                            }
+                        }
+
+                except Exception as e:
+                    logger.error(f"Error evaluating price trigger: {e}")
+                    # On error, stay in waiting state
+                    return {
+                        "workflow_status": "waiting",
+                        "error": str(e),
+                        "metadata": {
+                            **base_metadata,
+                            "trigger_error": str(e),
+                        }
+                    }
+
+            elif trigger_type == "time":
+                # Time trigger evaluation (placeholder)
+                # TODO: Implement time-based trigger evaluation
+                logger.warning("Time trigger evaluation not yet implemented")
+                return {
+                    "workflow_status": "running",
+                    "metadata": base_metadata
+                }
+
+            else:
+                # Unknown trigger type
+                logger.warning(f"Unknown trigger type: {trigger_type}")
+                return {
+                    "workflow_status": "running",
+                    "metadata": base_metadata
+                }
 
         return evaluate_trigger
 
@@ -299,6 +408,8 @@ class GraphAssembler:
     ) -> Callable[[WorkflowState], Awaitable[Dict[str, Any]]]:
         """
         Create action execution node function.
+
+        Task 3.1: Real Action Execution using Transaction Builders
 
         Args:
             action: SwapAction, StakeAction, or TransferAction
@@ -311,70 +422,106 @@ class GraphAssembler:
 
         async def execute_action(state: WorkflowState) -> Dict[str, Any]:
             """
-            Execute workflow action.
-
-            For now, this is a placeholder that logs the action.
-            In production, this would:
-            - For swap: Call Flamingo DEX smart contract
-            - For stake: Call Flamingo staking contract
-            - For transfer: Execute NEP-17 transfer
-
-            Returns:
-                State updates
+            Execute workflow action on Neo N3 blockchain.
             """
+            from app.services.transaction_builders import (
+                SwapTransactionBuilder,
+                StakeTransactionBuilder,
+                TransferTransactionBuilder
+            )
+
             logger.info(f"Executing {action_type} action (step {step_index})")
 
-            # Simulate action execution
-            result = {
-                "step": step_index,
-                "action_type": action_type,
-                "status": "completed",
-                "executed_at": datetime.now(timezone.utc).isoformat(),
-            }
+            try:
+                result_details = {}
+                tx_result = None
 
-            # Add action-specific details
-            if isinstance(action, SwapAction):
-                result["details"] = {
-                    "from_token": action.from_token,
-                    "to_token": action.to_token,
-                    "amount": action.amount,
-                    "percentage": action.percentage,
+                # Determine if demo mode from state or settings
+                demo_mode = state.get("demo_mode", True)
+
+                if action_type == "swap":
+                    builder = SwapTransactionBuilder(demo_mode=demo_mode)
+                    tx_result = await builder.build_and_execute(action)
+                    result_details = {
+                        "from_token": action.from_token.value if hasattr(action.from_token, 'value') else str(action.from_token),
+                        "to_token": action.to_token.value if hasattr(action.to_token, 'value') else str(action.to_token),
+                        "amount": str(action.amount or action.percentage),
+                        "tx_hash": tx_result.txid if tx_result else None,
+                    }
+
+                elif action_type == "stake":
+                    builder = StakeTransactionBuilder(demo_mode=demo_mode)
+                    tx_result = await builder.build_and_execute(action)
+                    result_details = {
+                        "token": action.token.value if hasattr(action.token, 'value') else str(action.token),
+                        "amount": str(action.amount or action.percentage),
+                        "tx_hash": tx_result.txid if tx_result else None,
+                    }
+
+                elif action_type == "transfer":
+                    builder = TransferTransactionBuilder(demo_mode=demo_mode)
+                    tx_result = await builder.build_and_execute(action)
+                    result_details = {
+                        "token": action.token.value if hasattr(action.token, 'value') else str(action.token),
+                        "to_address": action.to_address,
+                        "amount": str(action.amount or action.percentage),
+                        "tx_hash": tx_result.txid if tx_result else None,
+                    }
+
+                else:
+                    raise ValueError(f"Unknown action type: {action_type}")
+
+                # Build step result
+                step_result = {
+                    "step": step_index,
+                    "action_type": action_type,
+                    "status": "completed",
+                    "executed_at": datetime.now(timezone.utc).isoformat(),
+                    "tx_hash": tx_result.txid if tx_result else None,
+                    "details": result_details,
                 }
-            elif isinstance(action, StakeAction):
-                result["details"] = {
-                    "token": action.token,
-                    "amount": action.amount,
-                    "percentage": action.percentage,
+
+                # Determine if this is the last step
+                total_steps = state.get("total_steps", 1)
+                is_last_step = step_index >= total_steps - 1
+
+                # Update state with mutation-safe patterns
+                completed_steps = state.get("completed_steps", [])
+                step_results = state.get("step_results", [])
+
+                if not isinstance(completed_steps, list):
+                    completed_steps = []
+                if not isinstance(step_results, list):
+                    step_results = []
+
+                return {
+                    "current_step": step_index + 1,
+                    "completed_steps": [*completed_steps, step_index],
+                    "step_results": [*step_results, step_result],
+                    "workflow_status": "completed" if is_last_step else "running",
                 }
-            elif isinstance(action, TransferAction):
-                result["details"] = {
-                    "token": action.token,
-                    "to_address": action.to_address,
-                    "amount": action.amount,
-                    "percentage": action.percentage,
+
+            except Exception as e:
+                logger.error(f"Action execution error: {e}")
+
+                step_results = state.get("step_results", [])
+                if not isinstance(step_results, list):
+                    step_results = []
+
+                return {
+                    "workflow_status": "failed",
+                    "error": str(e),
+                    "step_results": [
+                        *step_results,
+                        {
+                            "step": step_index,
+                            "action_type": action_type,
+                            "status": "failed",
+                            "error": str(e),
+                            "failed_at": datetime.now(timezone.utc).isoformat(),
+                        }
+                    ],
                 }
-
-            # Update state with mutation-safe patterns
-            # Create new lists instead of mutating existing ones
-            completed_steps = state.get("completed_steps", [])
-            step_results = state.get("step_results", [])
-
-            # Validate types before mutation
-            if not isinstance(completed_steps, list):
-                completed_steps = []
-            if not isinstance(step_results, list):
-                step_results = []
-
-            # Use list copying to avoid mutation
-            new_completed_steps = [*completed_steps, step_index]
-            new_step_results = [*step_results, result]
-
-            return {
-                "current_step": step_index + 1,
-                "completed_steps": new_completed_steps,
-                "step_results": new_step_results,
-                "workflow_status": "running" if step_index < state["total_steps"] - 1 else "completed",
-            }
 
         return execute_action
 
