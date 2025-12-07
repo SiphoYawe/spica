@@ -9,12 +9,12 @@ const elk = new ELK();
 const layoutOptions = {
   "elk.algorithm": "layered",
   "elk.direction": "DOWN",
-  "elk.layered.spacing.edgeNodeBetweenLayers": "50", // Vertical space between layers (edges)
-  "elk.spacing.nodeNode": "80", // Horizontal space between nodes in same layer
+  "elk.layered.spacing.edgeNodeBetweenLayers": "100", // Vertical space between layers (edges)
+  "elk.spacing.nodeNode": "100", // Horizontal space between nodes in same layer
   "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
   "elk.separateConnectedComponents": "true",
-  "elk.spacing.componentComponent": "100",
-  "elk.layered.spacing.nodeNodeBetweenLayers": "50", // Vertical space between node layers
+  "elk.spacing.componentComponent": "120",
+  "elk.layered.spacing.nodeNodeBetweenLayers": "120", // Vertical space between node layers
   "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",
 };
 

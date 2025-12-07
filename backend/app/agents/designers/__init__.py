@@ -45,7 +45,8 @@ logger = logging.getLogger(__name__)
 NODE_X_POSITION = 250
 
 # Vertical spacing between nodes in pixels
-NODE_Y_SPACING = 150
+# Set to 300 to provide comfortable gap between nodes (nodes are 180-250px tall)
+NODE_Y_SPACING = 300
 
 
 # ============================================================================
