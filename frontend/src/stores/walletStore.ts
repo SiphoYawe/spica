@@ -42,24 +42,44 @@ export const useWalletStore = create<WalletState>()(
           const response = await apiClient.getWallet();
 
           if (response.success && response.data) {
-            // Handle nested response structure
-            if (response.data.success && response.data.data) {
+            // Handle nested response structure - backend wraps data in {success, data, timestamp}
+            const backendResponse = response.data as {
+              success?: boolean;
+              data?: {
+                address: string;
+                balances: Array<{ token: string; balance: string; decimals: number }>;
+                network: string;
+                timestamp: string;
+              };
+              error?: { code?: string; message?: string };
+              timestamp?: string;
+            };
+
+            // Check if backend returned success with nested data
+            if (backendResponse.success !== false && backendResponse.data && backendResponse.data.address) {
               set({
-                wallet: response.data.data,
+                wallet: backendResponse.data,
                 loading: false,
                 error: null,
                 lastFetched: new Date(),
               }, false, 'fetchWallet/success');
             } else {
+              // Handle backend error response
+              const errorMsg = typeof backendResponse.error?.message === 'string'
+                ? backendResponse.error.message
+                : 'Invalid wallet response';
               set({
                 loading: false,
-                error: 'Invalid wallet response',
+                error: errorMsg,
               }, false, 'fetchWallet/invalid');
             }
           } else {
+            const errorMsg = typeof response.error?.message === 'string'
+              ? response.error.message
+              : 'Failed to load wallet';
             set({
               loading: false,
-              error: response.error?.message || 'Failed to load wallet',
+              error: errorMsg,
             }, false, 'fetchWallet/error');
           }
         } catch (err) {

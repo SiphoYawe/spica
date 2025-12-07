@@ -519,6 +519,66 @@ class ApiClient {
       };
     }
   }
+
+  // ========================================================================
+  // Executions API - Task 4.4
+  // ========================================================================
+
+  /**
+   * List execution records with pagination and filters
+   */
+  async listExecutions(params?: {
+    workflow_id?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params?.workflow_id) queryParams.set('workflow_id', params.workflow_id);
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.page) queryParams.set('page', String(params.page));
+    if (params?.limit) queryParams.set('limit', String(params.limit));
+    const query = queryParams.toString();
+
+    return this.get<{
+      executions: Array<{
+        execution_id: string;
+        workflow_id: string;
+        workflow_name: string;
+        status: string;
+        trigger_type: string;
+        action_summary: string;
+        started_at: string;
+        completed_at: string | null;
+        tx_hash: string | null;
+        error: string | null;
+        gas_used: string | null;
+      }>;
+      total: number;
+      page: number;
+      limit: number;
+      has_next: boolean;
+    }>(`/api/v1/executions${query ? `?${query}` : ''}`);
+  }
+
+  /**
+   * Get execution details by ID
+   */
+  async getExecution(executionId: string) {
+    return this.get<{
+      execution_id: string;
+      workflow_id: string;
+      workflow_name: string;
+      status: string;
+      trigger_type: string;
+      action_summary: string;
+      started_at: string;
+      completed_at: string | null;
+      tx_hash: string | null;
+      error: string | null;
+      gas_used: string | null;
+    }>(`/api/v1/executions/${executionId}`);
+  }
 }
 
 // Export singleton instance

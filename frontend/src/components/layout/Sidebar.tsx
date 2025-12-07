@@ -1,10 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -12,15 +11,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  PanelLeftClose,
-  PanelLeftOpen,
   Zap,
   ArrowLeftRight,
   Lock,
   Send,
   Workflow,
-  Settings,
-  HelpCircle,
+  GripVertical,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -33,7 +29,9 @@ const nodeTypes = [
     icon: Zap,
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/30",
+    borderColor: "border-amber-500/50",
+    hoverBorder: "hover:border-amber-500",
+    dragBorder: "border-amber-500",
   },
   {
     type: "swap",
@@ -42,7 +40,9 @@ const nodeTypes = [
     icon: ArrowLeftRight,
     color: "text-cyan-500",
     bgColor: "bg-cyan-500/10",
-    borderColor: "border-cyan-500/30",
+    borderColor: "border-cyan-500/50",
+    hoverBorder: "hover:border-cyan-500",
+    dragBorder: "border-cyan-500",
   },
   {
     type: "stake",
@@ -51,7 +51,9 @@ const nodeTypes = [
     icon: Lock,
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",
-    borderColor: "border-emerald-500/30",
+    borderColor: "border-emerald-500/50",
+    hoverBorder: "hover:border-emerald-500",
+    dragBorder: "border-emerald-500",
   },
   {
     type: "transfer",
@@ -60,21 +62,43 @@ const nodeTypes = [
     icon: Send,
     color: "text-blue-500",
     bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/30",
+    borderColor: "border-blue-500/50",
+    hoverBorder: "hover:border-blue-500",
+    dragBorder: "border-blue-500",
   },
 ];
 
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar } = useUiStore();
+  const { sidebarOpen } = useUiStore();
+  const [draggingType, setDraggingType] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, type: string) => {
+    e.dataTransfer.setData("application/reactflow", type);
+    e.dataTransfer.effectAllowed = "move";
+    setDraggingType(type);
+
+    // Create a drag image
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+    dragImage.style.opacity = "0.8";
+    dragImage.style.position = "absolute";
+    dragImage.style.top = "-1000px";
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, 50, 25);
+    setTimeout(() => document.body.removeChild(dragImage), 0);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingType(null);
+  };
 
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex h-28 items-center justify-center border-b border-border px-4">
-          <div className="relative h-24 w-24">
+          <div className={cn("relative", sidebarOpen ? "h-24 w-24" : "h-10 w-10")}>
             <Image
-              src="/spica-logo.svg"
+              src={sidebarOpen ? "/spica-logo.svg" : "/symbol-spica.svg"}
               alt="Spica"
               fill
               className="object-contain"
@@ -90,7 +114,7 @@ export function Sidebar() {
               <div className="mb-3 flex items-center gap-2 px-1">
                 <Workflow className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Node Types
+                  Drag to Canvas
                 </span>
               </div>
             )}
@@ -98,34 +122,32 @@ export function Sidebar() {
             <div className={cn("space-y-2", !sidebarOpen && "space-y-3")}>
               {nodeTypes.map((node) => {
                 const Icon = node.icon;
+                const isDragging = draggingType === node.type;
 
                 if (!sidebarOpen) {
                   return (
                     <Tooltip key={node.type}>
                       <TooltipTrigger asChild>
-                        <button
+                        <div
                           className={cn(
-                            "flex h-10 w-10 items-center justify-center rounded-lg border transition-all",
+                            "group relative flex h-10 w-10 items-center justify-center rounded-lg border-2 border-dashed transition-all cursor-grab active:cursor-grabbing",
                             node.bgColor,
                             node.borderColor,
-                            "hover:border-opacity-60"
+                            node.hoverBorder,
+                            "hover:scale-110 hover:shadow-lg",
+                            isDragging && "opacity-50 scale-95"
                           )}
                           draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData(
-                              "application/reactflow",
-                              node.type
-                            );
-                            e.dataTransfer.effectAllowed = "move";
-                          }}
+                          onDragStart={(e) => handleDragStart(e, node.type)}
+                          onDragEnd={handleDragEnd}
                         >
                           <Icon className={cn("h-5 w-5", node.color)} />
-                        </button>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent side="right" sideOffset={10}>
                         <p className="font-medium">{node.label}</p>
                         <p className="text-xs text-muted-foreground">
-                          {node.description}
+                          Drag to add to canvas
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -133,84 +155,54 @@ export function Sidebar() {
                 }
 
                 return (
-                  <button
+                  <div
                     key={node.type}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg border p-3 transition-all",
+                      "group relative flex w-full items-center gap-3 rounded-lg border-2 border-dashed p-3 transition-all cursor-grab active:cursor-grabbing",
                       node.borderColor,
-                      "hover:border-opacity-60 hover:bg-accent/50"
+                      node.hoverBorder,
+                      "hover:bg-accent/30 hover:scale-[1.02] hover:shadow-lg",
+                      isDragging && "opacity-50 scale-95"
                     )}
                     draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData(
-                        "application/reactflow",
-                        node.type
-                      );
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
+                    onDragStart={(e) => handleDragStart(e, node.type)}
+                    onDragEnd={handleDragEnd}
                   >
+                    {/* Drag grip indicator */}
+                    <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-40 group-hover:opacity-100 transition-opacity">
+                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    </div>
+
                     <div
                       className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-lg",
+                        "ml-3 flex h-9 w-9 items-center justify-center rounded-lg",
                         node.bgColor
                       )}
                     >
                       <Icon className={cn("h-5 w-5", node.color)} />
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="text-sm font-medium">{node.label}</div>
+                      <div className="text-sm font-medium text-foreground">{node.label}</div>
                       <div className="text-xs text-muted-foreground">
                         {node.description}
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
+
+            {/* Drag hint */}
+            {sidebarOpen && (
+              <div className="mt-4 px-1 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                  Drag nodes onto the canvas
+                </p>
+              </div>
+            )}
           </div>
         </ScrollArea>
 
-        {/* Bottom Actions */}
-        <div className="border-t border-border p-3">
-          <Separator className="mb-3" />
-          <div className={cn("flex", sidebarOpen ? "flex-col gap-2" : "flex-col items-center gap-3")}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size={sidebarOpen ? "default" : "icon"}
-                  className={cn(
-                    sidebarOpen ? "justify-start" : "h-10 w-10"
-                  )}
-                >
-                  <Settings className="h-4 w-4" />
-                  {sidebarOpen && <span className="ml-2">Settings</span>}
-                </Button>
-              </TooltipTrigger>
-              {!sidebarOpen && (
-                <TooltipContent side="right">Settings</TooltipContent>
-              )}
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size={sidebarOpen ? "default" : "icon"}
-                  className={cn(
-                    sidebarOpen ? "justify-start" : "h-10 w-10"
-                  )}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                  {sidebarOpen && <span className="ml-2">Help</span>}
-                </Button>
-              </TooltipTrigger>
-              {!sidebarOpen && (
-                <TooltipContent side="right">Help</TooltipContent>
-              )}
-            </Tooltip>
-          </div>
-        </div>
       </div>
     </TooltipProvider>
   );

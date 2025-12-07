@@ -67,6 +67,8 @@ export function WalletDisplay() {
   }
 
   if (error && !wallet) {
+    // Ensure error is rendered as a string
+    const errorMessage = typeof error === 'string' ? error : 'Connection error';
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -80,7 +82,7 @@ export function WalletDisplay() {
             <span className="text-xs">Retry</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{error}</TooltipContent>
+        <TooltipContent>{errorMessage}</TooltipContent>
       </Tooltip>
     );
   }

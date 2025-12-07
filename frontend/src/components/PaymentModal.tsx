@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/api/client';
 import { usePayment } from '@/hooks/usePayment';
 import type { PaymentModalProps, PaymentRequest } from '@/types/payment';
-import { Loader2, CheckCircle2, XCircle, Wallet, ArrowRight, Zap } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Wallet, ArrowRight, Zap, AlertCircle, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function PaymentModal({
@@ -34,11 +34,12 @@ export default function PaymentModal({
   const [paymentInfo, setPaymentInfo] = useState<PaymentRequest | null>(null);
   const [isLoadingPaymentInfo, setIsLoadingPaymentInfo] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
   const { state, error, submitPayment, reset } = usePayment();
 
   // Check demo mode and fetch payment info when modal opens
   useEffect(() => {
-    if (isOpen && !paymentInfo) {
+    if (isOpen && !paymentInfo && workflowId) {
       checkDemoModeAndFetchPaymentInfo();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,6 +51,7 @@ export default function PaymentModal({
       reset();
       setPaymentInfo(null);
       setIsDemoMode(false);
+      setIsDeploying(false);
     }
   }, [isOpen, reset]);
 
@@ -72,6 +74,11 @@ export default function PaymentModal({
   }, [state, error, onError]);
 
   const checkDemoModeAndFetchPaymentInfo = async () => {
+    if (!workflowId) {
+      onError?.('No workflow ID provided');
+      return;
+    }
+
     setIsLoadingPaymentInfo(true);
     try {
       // Check if demo mode is enabled
@@ -89,9 +96,12 @@ export default function PaymentModal({
           setPaymentInfo(parsed);
         }
       } else if (response.success) {
-        // Already paid or demo mode - close modal
+        // Already deployed - close modal with success
         onSuccess?.(workflowId);
         onClose();
+      } else {
+        // Some other error
+        onError?.(response.error?.message || 'Failed to get payment info');
       }
     } catch (err) {
       console.error('Failed to fetch payment info:', err);
@@ -101,32 +111,49 @@ export default function PaymentModal({
     }
   };
 
-  const handlePayment = async () => {
+  const handleDemoModeDeploy = async () => {
+    if (!workflowId) return;
+
+    setIsDeploying(true);
+    try {
+      // In demo mode, send a dummy payment header so backend proceeds with deployment
+      // The backend will bypass payment verification when SPICA_DEMO_MODE=true
+      const demoPaymentHeader = btoa(JSON.stringify({
+        x402Version: 1,
+        demo: true,
+        timestamp: new Date().toISOString()
+      }));
+
+      const response = await apiClient.deployWithPayment(workflowId, demoPaymentHeader);
+      if (response.success) {
+        // Show success state briefly then close
+        onSuccess?.(workflowId);
+        onClose();
+      } else {
+        onError?.(response.error?.message || 'Failed to deploy workflow');
+      }
+    } catch (err) {
+      console.error('Demo mode deployment error:', err);
+      onError?.('Failed to deploy workflow');
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
+  const handlePayWithWallet = async () => {
     if (!paymentInfo) return;
 
-    // In demo mode, bypass actual payment and directly deploy
-    if (isDemoMode) {
-      console.log('Demo mode - bypassing payment and deploying directly');
-      try {
-        // Call deploy endpoint directly (backend will bypass payment verification)
-        const response = await apiClient.deployWorkflow(workflowId);
-        if (response.success) {
-          onSuccess?.(workflowId);
-          onClose();
-        } else {
-          onError?.(response.error?.message || 'Failed to deploy workflow in demo mode');
-        }
-      } catch (err) {
-        console.error('Demo mode deployment error:', err);
-        onError?.('Failed to deploy workflow in demo mode');
-      }
-      return;
-    }
+    // For production x402 payments, we need wallet signing
+    // This would integrate with wagmi/viem for EIP-3009 signing
+    // For now, show an informative message
 
-    // Production mode - submit actual payment
+    // TODO: Implement actual wallet signing flow
+    // 1. Connect wallet (wagmi)
+    // 2. Sign EIP-3009 transferWithAuthorization
+    // 3. Submit signed payment to backend
+
     const result = await submitPayment(workflowId, paymentInfo);
     if (result?.success) {
-      // Success handling is done in useEffect
       console.log('Payment successful:', result);
     }
   };
@@ -283,38 +310,77 @@ export default function PaymentModal({
 
         {/* Footer Actions */}
         {!isLoadingPaymentInfo && paymentInfo && state !== 'success' && (
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              disabled={state === 'loading'}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handlePayment}
-              variant="cyber"
-              disabled={state === 'loading'}
-              className="w-full gap-2 sm:w-auto"
-            >
-              {state === 'loading' ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {isDemoMode ? 'Deploying...' : 'Processing...'}
-                </>
-              ) : isDemoMode ? (
-                <>
-                  <Zap className="h-4 w-4" />
-                  Deploy (Demo)
-                </>
+          <DialogFooter className="flex-col gap-3 sm:flex-col">
+            {/* x402 Payment Info */}
+            {!isDemoMode && (
+              <Alert className="border-amber-500/30 bg-amber-500/10">
+                <AlertCircle className="h-4 w-4 text-amber-400" />
+                <AlertDescription className="text-sm text-amber-200">
+                  <strong>x402 Payment Protocol:</strong> Connect an EVM wallet (Base Sepolia) to sign and authorize the USDC payment.
+                  <a
+                    href="https://www.x402.org/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 inline-flex items-center gap-1 text-cyber-blue hover:underline"
+                  >
+                    Learn more <ExternalLink className="h-3 w-3" />
+                  </a>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex w-full gap-2">
+              <Button
+                onClick={onClose}
+                variant="ghost"
+                disabled={state === 'loading' || isDeploying}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+
+              {isDemoMode ? (
+                // Demo mode: Show deploy button that bypasses payment
+                <Button
+                  onClick={handleDemoModeDeploy}
+                  variant="cyber"
+                  disabled={isDeploying}
+                  className="flex-1 gap-2"
+                >
+                  {isDeploying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Deploying...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4" />
+                      Deploy (Demo)
+                    </>
+                  )}
+                </Button>
               ) : (
-                <>
-                  <Wallet className="h-4 w-4" />
-                  Pay & Deploy
-                </>
+                // Production mode: Show pay button
+                <Button
+                  onClick={handlePayWithWallet}
+                  variant="cyber"
+                  disabled={state === 'loading'}
+                  className="flex-1 gap-2"
+                >
+                  {state === 'loading' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="h-4 w-4" />
+                      Pay with Wallet
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+            </div>
           </DialogFooter>
         )}
       </DialogContent>

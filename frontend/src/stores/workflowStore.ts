@@ -61,6 +61,9 @@ interface WorkflowState {
   setParseError: (error: unknown | null) => void;
 
   // Complex actions
+  addNode: (node: GraphNode) => void;
+  addEdge: (edge: GraphEdge) => void;
+  removeNode: (nodeId: string) => void;
   updateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
   getSelectedNode: () => GraphNode | null;
   resetWorkflow: () => void;
@@ -95,6 +98,41 @@ export const useWorkflowStore = create<WorkflowState>()(
       setIsParsing: (loading) => set({ isParsing: loading }, false, 'setIsParsing'),
       setError: (error) => set({ error }, false, 'setError'),
       setParseError: (error) => set({ parseError: error }, false, 'setParseError'),
+
+      // Add node
+      addNode: (node) =>
+        set(
+          (state) => ({
+            nodes: [...state.nodes, node],
+          }),
+          false,
+          'addNode'
+        ),
+
+      // Add edge
+      addEdge: (edge) =>
+        set(
+          (state) => ({
+            edges: [...state.edges, edge],
+          }),
+          false,
+          'addEdge'
+        ),
+
+      // Remove node and its connected edges
+      removeNode: (nodeId) =>
+        set(
+          (state) => ({
+            nodes: state.nodes.filter((n) => n.id !== nodeId),
+            edges: state.edges.filter(
+              (e) => e.source !== nodeId && e.target !== nodeId
+            ),
+            selectedNodeId:
+              state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+          }),
+          false,
+          'removeNode'
+        ),
 
       // Update node data
       updateNodeData: (nodeId, data) =>
