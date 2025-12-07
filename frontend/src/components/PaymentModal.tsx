@@ -43,16 +43,13 @@ const DEFAULT_PAYMENT_INFO: PaymentRequest = {
       scheme: "exact",
       network: "base-sepolia",
       max_amount_required: "20000", // 0.02 USDC
-      resource: "workflow-deploy",
       description: "Deploy workflow to Neo N3",
       pay_to: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD78",
       extra: {
         currency: "USDC",
-        name: "Spica Workflow Deployment",
       },
     },
   ],
-  error: null,
 };
 
 export default function PaymentModal({
