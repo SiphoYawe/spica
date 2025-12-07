@@ -1,0 +1,269 @@
+{
+  "workflow_id": "wf_daily_gas_stake",
+  "user_id": "demo_user",
+  "user_address": "NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM",
+  "assembled_graph": {
+    "workflow_id": "wf_daily_gas_stake",
+    "workflow_name": "Daily DeFi Optimizer",
+    "workflow_description": "Every morning at 9am: Claim pending rewards, swap 50% to USDT for stability, stake remaining GAS for compounding yield",
+    "react_flow": {
+      "nodes": [
+        {
+          "id": "trigger_1",
+          "type": "trigger",
+          "label": "Daily at 9:00 AM",
+          "parameters": {
+            "type": "time",
+            "schedule": "daily at 9am"
+          },
+          "position": {
+            "x": 400,
+            "y": 0
+          },
+          "data": {
+            "label": "Daily at 9:00 AM",
+            "type": "time",
+            "schedule": "daily at 9am"
+          }
+        },
+        {
+          "id": "action_1",
+          "type": "stake",
+          "label": "Claim FLM Rewards",
+          "parameters": {
+            "type": "claim",
+            "token": "FLM",
+            "pool": "Flamingo"
+          },
+          "position": {
+            "x": 400,
+            "y": 150
+          },
+          "data": {
+            "label": "Claim FLM Rewards",
+            "type": "claim",
+            "token": "FLM",
+            "pool": "Flamingo"
+          }
+        },
+        {
+          "id": "action_2",
+          "type": "swap",
+          "label": "Swap 50% FLM to USDT",
+          "parameters": {
+            "type": "swap",
+            "from_token": "FLM",
+            "to_token": "USDT",
+            "amount": "50%",
+            "dex": "Flamingo"
+          },
+          "position": {
+            "x": 200,
+            "y": 300
+          },
+          "data": {
+            "label": "Swap 50% FLM to USDT",
+            "from_token": "FLM",
+            "to_token": "USDT",
+            "amount": "50%",
+            "dex": "Flamingo"
+          }
+        },
+        {
+          "id": "action_3",
+          "type": "swap",
+          "label": "Swap 50% FLM to GAS",
+          "parameters": {
+            "type": "swap",
+            "from_token": "FLM",
+            "to_token": "GAS",
+            "amount": "50%",
+            "dex": "Flamingo"
+          },
+          "position": {
+            "x": 600,
+            "y": 300
+          },
+          "data": {
+            "label": "Swap 50% FLM to GAS",
+            "from_token": "FLM",
+            "to_token": "GAS",
+            "amount": "50%",
+            "dex": "Flamingo"
+          }
+        },
+        {
+          "id": "action_4",
+          "type": "stake",
+          "label": "Stake GAS in Flamingo",
+          "parameters": {
+            "type": "stake",
+            "token": "GAS",
+            "amount": "all",
+            "pool": "Flamingo"
+          },
+          "position": {
+            "x": 600,
+            "y": 450
+          },
+          "data": {
+            "label": "Stake GAS in Flamingo",
+            "token": "GAS",
+            "amount": "all",
+            "pool": "Flamingo"
+          }
+        },
+        {
+          "id": "action_5",
+          "type": "transfer",
+          "label": "Send USDT to Savings",
+          "parameters": {
+            "type": "transfer",
+            "token": "USDT",
+            "amount": "all",
+            "to_address": "NSavingsWallet123..."
+          },
+          "position": {
+            "x": 200,
+            "y": 450
+          },
+          "data": {
+            "label": "Send USDT to Savings",
+            "token": "USDT",
+            "amount": "all",
+            "to_address": "NSavingsWallet123..."
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "trigger_1",
+          "target": "action_1",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e2",
+          "source": "action_1",
+          "target": "action_2",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e3",
+          "source": "action_1",
+          "target": "action_3",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e4",
+          "source": "action_3",
+          "target": "action_4",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e5",
+          "source": "action_2",
+          "target": "action_5",
+          "type": "default",
+          "animated": false
+        }
+      ]
+    },
+    "state_graph_config": {
+      "trigger": {
+        "type": "time",
+        "params": {
+          "type": "time",
+          "schedule": "daily at 9am"
+        }
+      },
+      "steps": [
+        {
+          "action_type": "claim",
+          "params": {
+            "type": "claim",
+            "token": "FLM",
+            "pool": "Flamingo"
+          },
+          "description": "Claim pending FLM rewards from Flamingo"
+        },
+        {
+          "action_type": "swap",
+          "params": {
+            "type": "swap",
+            "from_token": "FLM",
+            "to_token": "USDT",
+            "amount": "50%",
+            "dex": "Flamingo"
+          },
+          "description": "Swap 50% of FLM to USDT"
+        },
+        {
+          "action_type": "swap",
+          "params": {
+            "type": "swap",
+            "from_token": "FLM",
+            "to_token": "GAS",
+            "amount": "50%",
+            "dex": "Flamingo"
+          },
+          "description": "Swap remaining 50% of FLM to GAS"
+        },
+        {
+          "action_type": "stake",
+          "params": {
+            "type": "stake",
+            "token": "GAS",
+            "amount": "all",
+            "pool": "Flamingo"
+          },
+          "description": "Stake all GAS in Flamingo"
+        },
+        {
+          "action_type": "transfer",
+          "params": {
+            "type": "transfer",
+            "token": "USDT",
+            "amount": "all",
+            "to_address": "NSavingsWallet123..."
+          },
+          "description": "Transfer USDT to savings wallet"
+        }
+      ],
+      "node_count": 6,
+      "initial_state": {
+        "workflow_id": "wf_daily_gas_stake",
+        "trigger_type": "time",
+        "trigger_params": {
+          "type": "time",
+          "schedule": "daily at 9am"
+        },
+        "current_step": 0,
+        "total_steps": 5,
+        "completed_steps": [],
+        "step_results": [],
+        "workflow_status": "pending",
+        "error": null,
+        "metadata": {
+          "workflow_name": "Daily DeFi Optimizer",
+          "created_at": "2025-11-20T08:00:00.000000+00:00"
+        }
+      }
+    },
+    "created_at": "2025-11-20T08:00:00.000000+00:00",
+    "version": "1.0"
+  },
+  "status": "active",
+  "enabled": true,
+  "trigger_count": 3,
+  "execution_count": 3,
+  "last_triggered_at": "2025-12-07T09:00:00.000000+00:00",
+  "last_executed_at": "2025-12-07T09:00:42.000000+00:00",
+  "last_error": null,
+  "created_at": "2025-11-20T08:00:00.000000+00:00",
+  "updated_at": "2025-12-07T09:00:45.678901+00:00"
+}

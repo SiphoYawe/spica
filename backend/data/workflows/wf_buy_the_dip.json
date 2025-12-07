@@ -1,0 +1,254 @@
+{
+  "workflow_id": "wf_buy_the_dip",
+  "user_id": "demo_user",
+  "user_address": "NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM",
+  "assembled_graph": {
+    "workflow_id": "wf_buy_the_dip",
+    "workflow_name": "Smart DCA with Dip Buying",
+    "workflow_description": "When GAS drops below $3, execute a multi-step accumulation: swap USDT to GAS, split between staking and liquidity pool, then notify wallet",
+    "react_flow": {
+      "nodes": [
+        {
+          "id": "trigger_1",
+          "type": "trigger",
+          "label": "When GAS < $3.00",
+          "parameters": {
+            "type": "price",
+            "token": "GAS",
+            "condition": "less_than",
+            "threshold": 3.0
+          },
+          "position": {
+            "x": 400,
+            "y": 0
+          },
+          "data": {
+            "label": "When GAS < $3.00",
+            "type": "price",
+            "token": "GAS",
+            "condition": "less_than",
+            "threshold": 3.0
+          }
+        },
+        {
+          "id": "action_1",
+          "type": "swap",
+          "label": "Swap 200 USDT to GAS",
+          "parameters": {
+            "type": "swap",
+            "from_token": "USDT",
+            "to_token": "GAS",
+            "amount": 200,
+            "dex": "Flamingo",
+            "slippage": 0.5
+          },
+          "position": {
+            "x": 400,
+            "y": 150
+          },
+          "data": {
+            "label": "Swap 200 USDT to GAS",
+            "from_token": "USDT",
+            "to_token": "GAS",
+            "amount": 200,
+            "dex": "Flamingo",
+            "slippage": 0.5
+          }
+        },
+        {
+          "id": "action_2",
+          "type": "stake",
+          "label": "Stake 60% GAS",
+          "parameters": {
+            "type": "stake",
+            "token": "GAS",
+            "amount": "60%",
+            "pool": "Flamingo"
+          },
+          "position": {
+            "x": 200,
+            "y": 300
+          },
+          "data": {
+            "label": "Stake 60% GAS",
+            "token": "GAS",
+            "amount": "60%",
+            "pool": "Flamingo"
+          }
+        },
+        {
+          "id": "action_3",
+          "type": "stake",
+          "label": "Add 40% to GAS/NEO LP",
+          "parameters": {
+            "type": "liquidity",
+            "token": "GAS",
+            "amount": "40%",
+            "pool": "GAS/NEO",
+            "dex": "Flamingo"
+          },
+          "position": {
+            "x": 600,
+            "y": 300
+          },
+          "data": {
+            "label": "Add 40% to GAS/NEO LP",
+            "token": "GAS",
+            "amount": "40%",
+            "pool": "GAS/NEO",
+            "dex": "Flamingo"
+          }
+        },
+        {
+          "id": "action_4",
+          "type": "transfer",
+          "label": "Log to Activity Wallet",
+          "parameters": {
+            "type": "transfer",
+            "token": "GAS",
+            "amount": 0.001,
+            "to_address": "NActivityLogger456...",
+            "memo": "Dip bought successfully"
+          },
+          "position": {
+            "x": 400,
+            "y": 450
+          },
+          "data": {
+            "label": "Log to Activity Wallet",
+            "token": "GAS",
+            "amount": 0.001,
+            "to_address": "NActivityLogger456...",
+            "memo": "Dip bought successfully"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "trigger_1",
+          "target": "action_1",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e2",
+          "source": "action_1",
+          "target": "action_2",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e3",
+          "source": "action_1",
+          "target": "action_3",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e4",
+          "source": "action_2",
+          "target": "action_4",
+          "type": "default",
+          "animated": false
+        },
+        {
+          "id": "e5",
+          "source": "action_3",
+          "target": "action_4",
+          "type": "default",
+          "animated": false
+        }
+      ]
+    },
+    "state_graph_config": {
+      "trigger": {
+        "type": "price",
+        "params": {
+          "type": "price",
+          "token": "GAS",
+          "condition": "less_than",
+          "threshold": 3.0
+        }
+      },
+      "steps": [
+        {
+          "action_type": "swap",
+          "params": {
+            "type": "swap",
+            "from_token": "USDT",
+            "to_token": "GAS",
+            "amount": 200,
+            "dex": "Flamingo",
+            "slippage": 0.5
+          },
+          "description": "Swap 200 USDT to GAS on Flamingo with 0.5% slippage"
+        },
+        {
+          "action_type": "stake",
+          "params": {
+            "type": "stake",
+            "token": "GAS",
+            "amount": "60%",
+            "pool": "Flamingo"
+          },
+          "description": "Stake 60% of purchased GAS"
+        },
+        {
+          "action_type": "liquidity",
+          "params": {
+            "type": "liquidity",
+            "token": "GAS",
+            "amount": "40%",
+            "pool": "GAS/NEO",
+            "dex": "Flamingo"
+          },
+          "description": "Add 40% to GAS/NEO liquidity pool"
+        },
+        {
+          "action_type": "transfer",
+          "params": {
+            "type": "transfer",
+            "token": "GAS",
+            "amount": 0.001,
+            "to_address": "NActivityLogger456...",
+            "memo": "Dip bought successfully"
+          },
+          "description": "Send tiny amount to activity wallet as log"
+        }
+      ],
+      "node_count": 5,
+      "initial_state": {
+        "workflow_id": "wf_buy_the_dip",
+        "trigger_type": "price",
+        "trigger_params": {
+          "type": "price",
+          "token": "GAS",
+          "condition": "less_than",
+          "threshold": 3.0
+        },
+        "current_step": 0,
+        "total_steps": 4,
+        "completed_steps": [],
+        "step_results": [],
+        "workflow_status": "pending",
+        "error": null,
+        "metadata": {
+          "workflow_name": "Smart DCA with Dip Buying",
+          "created_at": "2025-11-25T14:30:00.000000+00:00"
+        }
+      }
+    },
+    "created_at": "2025-11-25T14:30:00.000000+00:00",
+    "version": "1.0"
+  },
+  "status": "active",
+  "enabled": true,
+  "trigger_count": 3,
+  "execution_count": 3,
+  "last_triggered_at": "2025-12-05T16:42:00.000000+00:00",
+  "last_executed_at": "2025-12-05T16:42:38.000000+00:00",
+  "last_error": null,
+  "created_at": "2025-11-25T14:30:00.000000+00:00",
+  "updated_at": "2025-12-05T16:42:38.234567+00:00"
+}
