@@ -1,6 +1,7 @@
 # Production Dockerfile for Spica Backend (Railway deployment)
 # Build from repository root to include SpoonOS dependencies
-FROM python:3.11-slim
+# Using Python 3.12 for neo-mamba>=3.0.1 compatibility
+FROM python:3.12-slim
 
 WORKDIR /app
 
