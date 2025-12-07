@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime, UTC
 import logging
+import os
 
 from app.api import router as api_router
 from app.__version__ import __version__
@@ -117,14 +118,24 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
+# Build CORS origins from environment + defaults
+_default_origins = [
+    "http://localhost:5173",  # Vite dev server
+    "http://frontend:5173",   # Docker container
+    "http://localhost:3000",  # Alternative dev server
+]
+
+# Add origins from CORS_ORIGINS environment variable (comma-separated)
+_env_origins = os.getenv("CORS_ORIGINS", "")
+if _env_origins:
+    _default_origins.extend([origin.strip() for origin in _env_origins.split(",") if origin.strip()])
+
+logger.info(f"CORS allowed origins: {_default_origins}")
+
 # CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://frontend:5173",   # Docker container
-        "http://localhost:3000",  # Alternative dev server
-    ],
+    allow_origins=_default_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=[
