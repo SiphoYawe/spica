@@ -151,7 +151,7 @@ class BaseAgent(BaseModel, ABC):
             async with asyncio.timeout(timeout):
                 async with self._memory_lock:
                     if role == "user":
-                        message = Message(role=Role.USER, content=content)
+                        message = Message(role=Role.USER.value, content=content)
                     elif role == "assistant":
                         if tool_calls:
                             formatted_tool_calls = [
@@ -167,15 +167,15 @@ class BaseAgent(BaseModel, ABC):
                                 for toolcall in tool_calls
                             ]
                             message = Message(
-                                role=Role.ASSISTANT,
+                                role=Role.ASSISTANT.value,
                                 content=content,
                                 tool_calls=formatted_tool_calls
                             )
                         else:
-                            message = Message(role=Role.ASSISTANT, content=content)
+                            message = Message(role=Role.ASSISTANT.value, content=content)
                     elif role == "tool":
                         message = Message(
-                            role=Role.TOOL,
+                            role=Role.TOOL.value,
                             content=content,
                             tool_call_id=tool_call_id,
                             name=tool_name
