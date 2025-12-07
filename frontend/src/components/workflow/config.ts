@@ -7,10 +7,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-// Node dimensions - fixed size for consistent layout
+// Node dimensions for layout calculations
+// Height is estimated for nodes with typical content (header + label + parameters)
+// Actual nodes have dynamic height, so we use a generous estimate for spacing
 export const NODE_SIZE = {
   width: 260,
-  height: 80,
+  height: 180, // Increased to account for typical node content with parameters
+  minHeight: 120, // Minimum node height (header + label only)
+  maxHeight: 250, // Maximum estimated height for complex nodes
 } as const;
 
 // Handle configuration type

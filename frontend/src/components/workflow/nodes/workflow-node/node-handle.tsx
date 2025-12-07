@@ -165,13 +165,15 @@ export function NodeHandle({ id, type, position, x, y }: NodeHandleProps) {
   const compatibleNodes = getCompatibleNodes(type);
 
   // Calculate handle position styles
+  // For top handles: position at y=0 and translate up by 50% so handle sits on border
+  // For bottom handles: position at y=height and translate down by 50% so handle sits on border
   const handleStyle = useMemo(
     () => ({
       left: x,
-      top: y,
+      top: position === Position.Top ? 0 : position === Position.Bottom ? "100%" : y,
       transform: "translate(-50%, -50%)",
     }),
-    [x, y]
+    [x, y, position]
   );
 
   return (

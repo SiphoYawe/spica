@@ -41,19 +41,29 @@ function TransferNode({ data, selected }: NodeProps<TransferNodeType>) {
       hasInput={true}
       hasOutput={true}
     >
-      {data.token && data.amount !== undefined && (
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-md border border-blue-500/20 bg-blue-500/5 px-2 py-0.5 text-[10px] font-medium text-blue-500 font-mono">
-            {data.amount} {data.token}
-          </span>
-        </div>
-      )}
+      <div className="flex flex-col gap-1.5">
+        {data.token && (
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center rounded-md border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-400 font-mono">
+              {data.token}
+            </span>
+            {recipient && (
+              <>
+                <Send className="h-3 w-3 text-muted-foreground/60" />
+                <span className="text-xs text-muted-foreground font-mono bg-muted/30 px-1.5 py-0.5 rounded">
+                  {formatAddress(recipient)}
+                </span>
+              </>
+            )}
+          </div>
+        )}
 
-      {recipient && (
-        <div className="text-[10px] text-muted-foreground">
-          To: <span className="font-mono">{formatAddress(recipient)}</span>
-        </div>
-      )}
+        {data.amount !== undefined && (
+          <div className="text-sm font-semibold text-foreground font-mono">
+            {data.amount} {data.token}
+          </div>
+        )}
+      </div>
     </BaseNode>
   );
 }

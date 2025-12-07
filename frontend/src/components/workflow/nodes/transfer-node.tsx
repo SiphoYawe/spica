@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { Send, Percent } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { WorkflowNode } from "./workflow-node";
 import { NodeHandle } from "./workflow-node/node-handle";
@@ -9,7 +10,9 @@ import { nodesConfig, type WorkflowNodeData } from "../config";
 export interface TransferNodeData extends WorkflowNodeData {
   token?: string;
   amount?: string | number;
-  recipient?: string;
+  amountType?: "fixed" | "percentage";
+  to_address?: string;
+  recipient?: string; // Legacy support
   memo?: string;
 }
 
@@ -36,36 +39,60 @@ function TransferNodeComponent({ id, data }: TransferNodeProps) {
     title: data.title || "Transfer",
   };
 
+  // Support both naming conventions
+  const recipientAddress = data.to_address || data.recipient;
+
   // Get handle config for this node type
   const handles = nodesConfig.transfer.handles;
 
+  // Format amount display
+  const formatAmount = () => {
+    if (!data.amount) return null;
+    if (data.amountType === "percentage") {
+      return `${data.amount}%`;
+    }
+    return `${data.amount} ${data.token || ""}`;
+  };
+
+  const isConfigured = data.token && recipientAddress;
+
   return (
     <WorkflowNode id={id} data={nodeData}>
-      {/* Token and amount */}
-      <div className="flex items-center gap-2">
-        {data.amount && data.token && (
-          <Badge
-            variant="outline"
-            className="h-5 border-blue-500/30 bg-blue-500/5 text-blue-500 font-mono"
-          >
-            {data.amount} {data.token}
-          </Badge>
+      <div className="space-y-1.5">
+        {/* Token badge */}
+        {data.token ? (
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className="h-5 border-blue-500/30 bg-blue-500/5 text-blue-500 font-mono"
+            >
+              {data.token}
+            </Badge>
+            {recipientAddress && (
+              <>
+                <Send className="h-3 w-3 text-muted-foreground" />
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground">
+                  {truncateAddress(recipientAddress)}
+                </code>
+              </>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            {data.label || "Select token and recipient"}
+          </span>
+        )}
+
+        {/* Amount display */}
+        {data.amount && (
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            {data.amountType === "percentage" && (
+              <Percent className="h-3 w-3 text-muted-foreground" />
+            )}
+            <span className="font-mono">{formatAmount()}</span>
+          </div>
         )}
       </div>
-
-      {/* Recipient */}
-      {data.recipient && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>To:</span>
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">
-            {truncateAddress(data.recipient)}
-          </code>
-        </div>
-      )}
-
-      {!data.token && !data.label && (
-        <span className="text-xs text-muted-foreground">Configure transfer</span>
-      )}
 
       {/* Render handles from config */}
       {handles.map((handle) => (

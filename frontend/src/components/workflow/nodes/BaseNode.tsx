@@ -17,40 +17,44 @@ export interface BaseNodeProps {
 
 const nodeStyles = {
   trigger: {
-    border: "border-amber-500/30",
+    border: "border-amber-500/50",
     borderSelected: "border-amber-500",
     indicator: "bg-amber-500",
-    iconBg: "bg-amber-500/10",
-    iconText: "text-amber-500",
-    handle: "border-amber-500",
-    glow: "shadow-[0_0_20px_rgba(245,158,11,0.15)]",
+    iconBg: "bg-amber-500/20",
+    iconText: "text-amber-400",
+    handle: "border-amber-400",
+    glow: "shadow-[0_0_24px_rgba(245,158,11,0.25)]",
+    typeLabel: "text-amber-400/90",
   },
   swap: {
-    border: "border-cyan-500/30",
+    border: "border-cyan-500/50",
     borderSelected: "border-cyan-500",
     indicator: "bg-cyan-500",
-    iconBg: "bg-cyan-500/10",
-    iconText: "text-cyan-500",
-    handle: "border-cyan-500",
-    glow: "shadow-[0_0_20px_rgba(6,182,212,0.15)]",
+    iconBg: "bg-cyan-500/20",
+    iconText: "text-cyan-400",
+    handle: "border-cyan-400",
+    glow: "shadow-[0_0_24px_rgba(6,182,212,0.25)]",
+    typeLabel: "text-cyan-400/90",
   },
   stake: {
-    border: "border-emerald-500/30",
+    border: "border-emerald-500/50",
     borderSelected: "border-emerald-500",
     indicator: "bg-emerald-500",
-    iconBg: "bg-emerald-500/10",
-    iconText: "text-emerald-500",
-    handle: "border-emerald-500",
-    glow: "shadow-[0_0_20px_rgba(16,185,129,0.15)]",
+    iconBg: "bg-emerald-500/20",
+    iconText: "text-emerald-400",
+    handle: "border-emerald-400",
+    glow: "shadow-[0_0_24px_rgba(16,185,129,0.25)]",
+    typeLabel: "text-emerald-400/90",
   },
   transfer: {
-    border: "border-blue-500/30",
+    border: "border-blue-500/50",
     borderSelected: "border-blue-500",
     indicator: "bg-blue-500",
-    iconBg: "bg-blue-500/10",
-    iconText: "text-blue-500",
-    handle: "border-blue-500",
-    glow: "shadow-[0_0_20px_rgba(59,130,246,0.15)]",
+    iconBg: "bg-blue-500/20",
+    iconText: "text-blue-400",
+    handle: "border-blue-400",
+    glow: "shadow-[0_0_24px_rgba(59,130,246,0.25)]",
+    typeLabel: "text-blue-400/90",
   },
 };
 
@@ -69,13 +73,14 @@ function BaseNode({
   return (
     <div
       className={cn(
-        "relative min-w-[220px] max-w-[280px] rounded-lg border bg-card transition-all duration-150",
+        "relative min-w-[220px] max-w-[280px] rounded-lg border-2 bg-card/95 backdrop-blur-sm transition-all duration-150",
         selected ? styles.borderSelected : styles.border,
-        selected && styles.glow
+        selected && styles.glow,
+        "hover:border-opacity-80"
       )}
     >
-      {/* Type indicator bar */}
-      <div className={cn("absolute left-0 right-0 top-0 h-0.5 rounded-t-lg", styles.indicator)} />
+      {/* Type indicator bar - thicker for visibility */}
+      <div className={cn("absolute left-0 right-0 top-0 h-1 rounded-t-lg", styles.indicator)} />
 
       {/* Input handle */}
       {hasInput && (
@@ -83,14 +88,14 @@ function BaseNode({
           type="target"
           position={Position.Top}
           className={cn(
-            "!h-3 !w-3 !rounded-full !border-2 !bg-card transition-all",
+            "!h-3.5 !w-3.5 !rounded-full !border-2 !bg-card transition-all hover:!scale-125",
             styles.handle
           )}
         />
       )}
 
       {/* Header */}
-      <div className="flex items-center gap-2.5 border-b border-border/50 px-3 py-2.5">
+      <div className="flex items-center gap-2.5 border-b border-border/60 px-3 py-2.5 mt-0.5">
         <div
           className={cn(
             "flex h-8 w-8 items-center justify-center rounded-md",
@@ -100,22 +105,26 @@ function BaseNode({
           <span className={styles.iconText}>{icon}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className={cn("text-[11px] font-semibold uppercase tracking-wider", styles.typeLabel)}>
             {type}
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-3 space-y-2">
-        <div className="text-sm font-medium text-foreground truncate">
+      <div className="px-3 py-2">
+        <div className="text-sm font-semibold text-foreground truncate">
           {label}
         </div>
 
-        {children}
+        {children && (
+          <div className="mt-1.5 space-y-1.5">
+            {children}
+          </div>
+        )}
 
         {metadata && (
-          <div className="pt-1 text-xs text-muted-foreground font-mono">
+          <div className="mt-1.5 text-xs text-muted-foreground/80 font-mono">
             {metadata}
           </div>
         )}
@@ -127,7 +136,7 @@ function BaseNode({
           type="source"
           position={Position.Bottom}
           className={cn(
-            "!h-3 !w-3 !rounded-full !border-2 !bg-card transition-all",
+            "!h-3.5 !w-3.5 !rounded-full !border-2 !bg-card transition-all hover:!scale-125",
             styles.handle
           )}
         />

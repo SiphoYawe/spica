@@ -16,38 +16,43 @@ interface SwapNodeData extends Record<string, unknown> {
 type SwapNodeType = Node<SwapNodeData, "swap">;
 
 function SwapNode({ data, selected }: NodeProps<SwapNodeType>) {
-  // Format display text
-  let displayText = data.label;
-  if (data.from_token && data.to_token && data.amount !== undefined) {
-    displayText = `${data.amount} ${data.from_token} → ${data.to_token}`;
-  }
-
   return (
     <BaseNode
       type="swap"
-      label={displayText}
+      label={data.label}
       icon={<ArrowLeftRight className="h-4 w-4" />}
       selected={selected}
       hasInput={true}
       hasOutput={true}
     >
-      {data.from_token && data.to_token && (
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-md border border-cyan-500/20 bg-cyan-500/5 px-2 py-0.5 text-[10px] font-medium text-cyan-500 font-mono">
-            {data.from_token}
-          </span>
-          <ArrowLeftRight className="h-3 w-3 text-muted-foreground" />
-          <span className="inline-flex items-center rounded-md border border-cyan-500/20 bg-cyan-500/5 px-2 py-0.5 text-[10px] font-medium text-cyan-500 font-mono">
-            {data.to_token}
-          </span>
-        </div>
-      )}
+      <div className="flex flex-col gap-1.5">
+        {/* Token pair badges */}
+        {data.from_token && data.to_token && (
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-400 font-mono">
+              {data.from_token}
+            </span>
+            <ArrowLeftRight className="h-3 w-3 text-muted-foreground/60" />
+            <span className="inline-flex items-center rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-400 font-mono">
+              {data.to_token}
+            </span>
+          </div>
+        )}
 
-      {data.min_output !== undefined && (
-        <div className="text-[10px] text-muted-foreground">
-          Min: {data.min_output} {data.to_token}
-        </div>
-      )}
+        {/* Amount display */}
+        {data.amount !== undefined && (
+          <div className="text-sm font-semibold text-foreground font-mono">
+            {data.amount} {data.from_token}
+          </div>
+        )}
+
+        {/* Min output */}
+        {data.min_output !== undefined && (
+          <div className="text-xs text-muted-foreground">
+            Min output: <span className="font-mono">{data.min_output} {data.to_token}</span>
+          </div>
+        )}
+      </div>
     </BaseNode>
   );
 }

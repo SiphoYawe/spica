@@ -19,14 +19,14 @@ export const BaseHandle = forwardRef<HTMLDivElement, BaseHandleProps>(
       <Handle
         ref={ref}
         className={cn(
-          // Size: 11px circles like Pro template
-          "!h-[11px] !w-[11px] !rounded-full",
-          // Border and background
-          "!border-2 !border-border !bg-card",
-          // Dark mode adjustments
-          "dark:!border-secondary dark:!bg-secondary",
+          // Size: 12px circles for better visibility
+          "!h-3 !w-3 !rounded-full",
+          // High contrast colors - light/bright for visibility on dark backgrounds
+          "!border-2 !border-zinc-400 !bg-zinc-200",
+          // Dark mode - use bright colors for contrast
+          "dark:!border-zinc-300 dark:!bg-zinc-100",
           // Hover state with Spica green
-          "hover:!border-spica hover:!shadow-[0_0_8px_rgba(0,255,72,0.4)]",
+          "hover:!border-spica hover:!bg-spica/20 hover:!shadow-[0_0_8px_rgba(0,255,72,0.5)]",
           // Connecting state
           "[&.connecting]:!border-spica [&.connecting]:!bg-spica",
           "[&.valid]:!border-spica [&.valid]:!bg-spica",
