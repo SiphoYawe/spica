@@ -1,0 +1,35 @@
+{
+  "execution_id": "exec_d0d4bf543640",
+  "workflow_id": "wf_5b6c302ffcea",
+  "workflow_name": "GAS to bNEO Conversion and Staking",
+  "user_address": "NYxb4fSZVKAz8YsgaPK2WkT3KcAE9b3Vag",
+  "trigger_type": "manual",
+  "started_at": "2025-11-06T18:53:10.775033+00:00",
+  "completed_at": null,
+  "status": "running",
+  "step_results": [
+    {
+      "action_type": "initialize",
+      "status": "completed",
+      "result": {
+        "message": "Workflow initialized"
+      }
+    },
+    {
+      "action_type": "execute",
+      "status": "running",
+      "tx_hash": null,
+      "gas_used": null,
+      "result": {
+        "message": "Execution in progress"
+      }
+    }
+  ],
+  "error": null,
+  "metadata": {
+    "tx_hash": null,
+    "gas_used": null,
+    "network": "neo-testnet",
+    "trigger_price": null
+  }
+}

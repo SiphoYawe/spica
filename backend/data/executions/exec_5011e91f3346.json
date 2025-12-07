@@ -1,0 +1,49 @@
+{
+  "execution_id": "exec_5011e91f3346",
+  "workflow_id": "wf_37a98c68c0d0",
+  "workflow_name": "Weekly Portfolio Rebalance",
+  "user_address": "NYxb4fSZVKAz8YsgaPK2WkT3KcAE9b3Vag",
+  "trigger_type": "schedule",
+  "started_at": "2025-12-05T06:39:10.775033+00:00",
+  "completed_at": "2025-12-05T06:39:18.775033+00:00",
+  "status": "completed",
+  "step_results": [
+    {
+      "action_type": "check_portfolio",
+      "status": "completed",
+      "result": {
+        "gas_balance": 480.59,
+        "neo_balance": 18.23,
+        "gas_percentage": 62.4
+      }
+    },
+    {
+      "action_type": "swap",
+      "status": "completed",
+      "result": {
+        "from_token": "GAS",
+        "to_token": "NEO",
+        "percentage": "30%",
+        "amount_swapped": 42.16
+      }
+    },
+    {
+      "action_type": "stake",
+      "status": "completed",
+      "tx_hash": "0xc2b0f8e6d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9e8d7c6b5a4e3d2c1b0a9f8e7d6",
+      "gas_used": "211.062",
+      "result": {
+        "token": "NEO",
+        "amount": 18.34,
+        "pool": "neoburger"
+      }
+    }
+  ],
+  "error": null,
+  "metadata": {
+    "tx_hash": "0xc2b0f8e6d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9e8d7c6b5a4e3d2c1b0a9f8e7d6",
+    "gas_used": "211.062",
+    "network": "neo-testnet",
+    "trigger_price": null
+  }
+}

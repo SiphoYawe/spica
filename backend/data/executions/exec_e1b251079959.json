@@ -1,0 +1,41 @@
+{
+  "execution_id": "exec_e1b251079959",
+  "workflow_id": "wf_5948d95ecaec",
+  "workflow_name": "Auto DCA into NEO",
+  "user_address": "NYxb4fSZVKAz8YsgaPK2WkT3KcAE9b3Vag",
+  "trigger_type": "price",
+  "started_at": "2025-11-14T14:53:10.775033+00:00",
+  "completed_at": "2025-11-14T14:53:14.775033+00:00",
+  "status": "completed",
+  "step_results": [
+    {
+      "action_type": "check_price",
+      "status": "completed",
+      "result": {
+        "token": "GAS",
+        "price_usd": 4.23,
+        "source": "flamingo"
+      }
+    },
+    {
+      "action_type": "swap",
+      "status": "completed",
+      "tx_hash": "0xe4d2b0f8e6d5c4b3a2f1e0d9c8b7a6e5d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9e8",
+      "gas_used": "345.204",
+      "result": {
+        "from_token": "GAS",
+        "to_token": "NEO",
+        "amount": 23.76,
+        "received": 1.4759,
+        "rate": 0.1081
+      }
+    }
+  ],
+  "error": null,
+  "metadata": {
+    "tx_hash": "0xe4d2b0f8e6d5c4b3a2f1e0d9c8b7a6e5d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9e8",
+    "gas_used": "345.204",
+    "network": "neo-testnet",
+    "trigger_price": 5.1
+  }
+}

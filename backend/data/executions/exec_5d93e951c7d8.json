@@ -1,0 +1,35 @@
+{
+  "execution_id": "exec_5d93e951c7d8",
+  "workflow_id": "wf_a32dab93042a",
+  "workflow_name": "Daily GAS Staking",
+  "user_address": "NYxb4fSZVKAz8YsgaPK2WkT3KcAE9b3Vag",
+  "trigger_type": "schedule",
+  "started_at": "2025-12-05T19:34:10.775033+00:00",
+  "completed_at": "2025-12-05T19:34:19.775033+00:00",
+  "status": "completed",
+  "step_results": [
+    {
+      "action_type": "initialize",
+      "status": "completed",
+      "result": {
+        "message": "Workflow initialized"
+      }
+    },
+    {
+      "action_type": "execute",
+      "status": "completed",
+      "tx_hash": "0xf5e3c1a9f7e6d5c4b3a2f1e0d9c8b7a6e5d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9",
+      "gas_used": "138.738",
+      "result": {
+        "message": "Execution complete"
+      }
+    }
+  ],
+  "error": null,
+  "metadata": {
+    "tx_hash": "0xf5e3c1a9f7e6d5c4b3a2f1e0d9c8b7a6e5d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9",
+    "gas_used": "138.738",
+    "network": "neo-testnet",
+    "trigger_price": null
+  }
+}
