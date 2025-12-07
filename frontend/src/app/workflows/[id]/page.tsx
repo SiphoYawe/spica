@@ -53,8 +53,17 @@ interface WorkflowDetail {
   last_error: string | null;
 }
 
-// Execution records will come from backend API (GET /workflows/{id}/executions)
-// For now, we show empty state until backend endpoint is implemented
+// Execution record type for history display (matches ExecutionHistory component)
+interface ExecutionRecord {
+  id: string;
+  workflow_id: string;
+  triggered_at: string;
+  executed_at?: string;
+  status: "pending" | "running" | "success" | "failed";
+  transaction_hash?: string;
+  error?: string;
+  duration_ms?: number;
+}
 
 export default function WorkflowDetailPage() {
   const params = useParams();
@@ -63,6 +72,7 @@ export default function WorkflowDetailPage() {
   useAppInitialization();
 
   const [workflow, setWorkflow] = useState<WorkflowDetail | null>(null);
+  const [executions, setExecutions] = useState<ExecutionRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isToggling, setIsToggling] = useState(false);
@@ -71,18 +81,56 @@ export default function WorkflowDetailPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await apiClient.getWorkflow(workflowId);
-      if (result.success && result.data) {
-        // Check for backend success (not an error response)
-        if (result.data.success !== false && result.data.workflow_id) {
-          setWorkflow(result.data as unknown as WorkflowDetail);
+      // Fetch workflow details and executions in parallel
+      const [workflowResult, executionsResult] = await Promise.all([
+        apiClient.getWorkflow(workflowId),
+        apiClient.listExecutions({ workflow_id: workflowId, limit: 20 })
+      ]);
+
+      // Handle workflow response
+      if (workflowResult.success && workflowResult.data) {
+        if (workflowResult.data.success !== false && workflowResult.data.workflow_id) {
+          setWorkflow(workflowResult.data as unknown as WorkflowDetail);
         } else {
-          // Handle backend error response structure
-          const backendError = result.data as unknown as { error?: { message?: string } };
+          const backendError = workflowResult.data as unknown as { error?: { message?: string } };
           setError(backendError.error?.message || "Failed to load workflow");
+          return;
         }
       } else {
-        setError(result.error?.message || "Failed to load workflow");
+        setError(workflowResult.error?.message || "Failed to load workflow");
+        return;
+      }
+
+      // Handle executions response
+      if (executionsResult.success && executionsResult.data?.executions) {
+        const mappedExecutions: ExecutionRecord[] = executionsResult.data.executions.map(e => {
+          // Calculate duration if both timestamps exist
+          let duration_ms: number | undefined;
+          if (e.started_at && e.completed_at) {
+            duration_ms = new Date(e.completed_at).getTime() - new Date(e.started_at).getTime();
+          }
+
+          // Map API status to UI status
+          let status: ExecutionRecord["status"] = "pending";
+          if (e.status === "completed") status = "success";
+          else if (e.status === "failed") status = "failed";
+          else if (e.status === "running") status = "running";
+
+          return {
+            id: e.execution_id,
+            workflow_id: e.workflow_id,
+            triggered_at: e.started_at,
+            executed_at: e.completed_at || undefined,
+            status,
+            transaction_hash: e.tx_hash || undefined,
+            error: e.error || undefined,
+            duration_ms,
+          };
+        });
+        setExecutions(mappedExecutions);
+      } else {
+        // If no executions, set empty array
+        setExecutions([]);
       }
     } catch {
       setError("Failed to load workflow");
@@ -444,7 +492,7 @@ export default function WorkflowDetailPage() {
                     <CardContent className="pt-4">
                       <TabsContent value="executions" className="mt-0">
                         <ExecutionHistory
-                          executions={[]}
+                          executions={executions}
                         />
                       </TabsContent>
                       <TabsContent value="activity" className="mt-0">

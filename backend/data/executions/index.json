@@ -1,62 +1,10 @@
 {
-  "executions": [
-    {
-      "execution_id": "exec_daily_001",
-      "workflow_id": "wf_daily_gas_stake",
-      "workflow_name": "Daily DeFi Optimizer",
-      "status": "completed",
-      "started_at": "2025-12-07T09:00:00+00:00"
-    },
-    {
-      "execution_id": "exec_daily_002",
-      "workflow_id": "wf_daily_gas_stake",
-      "workflow_name": "Daily DeFi Optimizer",
-      "status": "completed",
-      "started_at": "2025-12-06T09:00:00+00:00"
-    },
-    {
-      "execution_id": "exec_daily_003",
-      "workflow_id": "wf_daily_gas_stake",
-      "workflow_name": "Daily DeFi Optimizer",
-      "status": "completed",
-      "started_at": "2025-12-05T09:00:00+00:00"
-    },
-    {
-      "execution_id": "exec_dca_001",
-      "workflow_id": "wf_buy_the_dip",
-      "workflow_name": "Smart DCA with Dip Buying",
-      "status": "completed",
-      "started_at": "2025-12-05T16:42:00+00:00"
-    },
-    {
-      "execution_id": "exec_dca_002",
-      "workflow_id": "wf_buy_the_dip",
-      "workflow_name": "Smart DCA with Dip Buying",
-      "status": "completed",
-      "started_at": "2025-12-01T14:22:00+00:00"
-    },
-    {
-      "execution_id": "exec_dca_003",
-      "workflow_id": "wf_buy_the_dip",
-      "workflow_name": "Smart DCA with Dip Buying",
-      "status": "failed",
-      "started_at": "2025-11-28T08:15:00+00:00"
-    },
-    {
-      "execution_id": "exec_weekly_001",
-      "workflow_id": "wf_37a98c68c0d0",
-      "workflow_name": "Weekly Portfolio Rebalance",
-      "status": "completed",
-      "started_at": "2025-12-02T10:00:00+00:00"
-    },
-    {
-      "execution_id": "exec_weekly_002",
-      "workflow_id": "wf_37a98c68c0d0",
-      "workflow_name": "Weekly Portfolio Rebalance",
-      "status": "completed",
-      "started_at": "2025-11-25T10:00:00+00:00"
-    }
-  ],
-  "total_count": 8,
-  "last_updated": "2025-12-07T09:00:42+00:00"
+  "exec_daily_001": "exec_daily_001.json",
+  "exec_daily_002": "exec_daily_002.json",
+  "exec_daily_003": "exec_daily_003.json",
+  "exec_dca_001": "exec_dca_001.json",
+  "exec_dca_002": "exec_dca_002.json",
+  "exec_dca_003": "exec_dca_003.json",
+  "exec_weekly_001": "exec_weekly_001.json",
+  "exec_weekly_002": "exec_weekly_002.json"
 }
