@@ -4,8 +4,8 @@
   "workflow_name": "Daily DeFi Optimizer",
   "user_address": "NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM",
   "trigger_type": "schedule",
-  "started_at": "2025-12-06T09:00:00+00:00",
-  "completed_at": "2025-12-06T09:00:38+00:00",
+  "started_at": "2025-12-07T08:30:00+00:00",
+  "completed_at": "2025-12-07T08:30:38+00:00",
   "status": "completed",
   "step_results": [
     {

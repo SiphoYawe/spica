@@ -4,8 +4,8 @@
   "workflow_name": "Smart DCA with Dip Buying",
   "user_address": "NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM",
   "trigger_type": "price",
-  "started_at": "2025-12-05T16:42:00+00:00",
-  "completed_at": "2025-12-05T16:42:38+00:00",
+  "started_at": "2025-12-07T08:00:00+00:00",
+  "completed_at": "2025-12-07T08:00:38+00:00",
   "status": "completed",
   "step_results": [
     {

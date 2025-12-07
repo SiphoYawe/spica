@@ -4,9 +4,9 @@
   "workflow_name": "Smart DCA with Dip Buying",
   "user_address": "NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM",
   "trigger_type": "price",
-  "started_at": "2025-11-28T08:15:00+00:00",
-  "completed_at": null,
-  "status": "failed",
+  "started_at": "2025-12-07T09:00:00+00:00",
+  "completed_at": "2025-12-07T09:00:38+00:00",
+  "status": "completed",
   "step_results": [
     {
       "action_type": "check_price",
@@ -20,13 +20,56 @@
     },
     {
       "action_type": "swap",
-      "status": "failed",
-      "error": "Insufficient USDT balance for swap"
+      "status": "completed",
+      "tx_hash": "0x11a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3",
+      "result": {
+        "from_token": "USDT",
+        "to_token": "GAS",
+        "amount": 200,
+        "received": 68.73,
+        "dex": "Flamingo",
+        "slippage": 0.45
+      }
+    },
+    {
+      "action_type": "stake",
+      "status": "completed",
+      "tx_hash": "0x22b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4",
+      "result": {
+        "token": "GAS",
+        "amount": 41.24,
+        "percentage": "60%",
+        "pool": "Flamingo"
+      }
+    },
+    {
+      "action_type": "liquidity",
+      "status": "completed",
+      "tx_hash": "0x33c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5",
+      "result": {
+        "token": "GAS",
+        "amount": 27.49,
+        "percentage": "40%",
+        "pool": "GAS/NEO",
+        "dex": "Flamingo"
+      }
+    },
+    {
+      "action_type": "transfer",
+      "status": "completed",
+      "tx_hash": "0x44d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6",
+      "result": {
+        "token": "GAS",
+        "amount": 0.001,
+        "to_address": "NActivityLogger456...",
+        "memo": "Dip bought successfully"
+      }
     }
   ],
-  "error": "Insufficient USDT balance for swap",
+  "error": null,
   "metadata": {
     "trigger_price": 2.91,
+    "gas_used": "0.305",
     "network": "neo-testnet"
   }
 }
