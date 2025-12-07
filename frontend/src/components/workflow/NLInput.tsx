@@ -19,18 +19,25 @@ import {
   X,
 } from "lucide-react";
 import { apiClient } from "@/api/client";
+import ParseErrorDisplay from "@/components/ParseErrorDisplay";
+import type { ParseErrorResponse } from "@/types/api";
 
-// Example workflow prompts
+// Example workflow prompts - showcasing full Spica capabilities with complex real-world use cases
 const examplePrompts = [
-  "When NEO price drops below $10, swap 50 NEO to GAS",
-  "Every day at 9am, stake 100 GAS in Flamingo pool",
-  "If GAS > $5, transfer 25 GAS to wallet N3...",
-  "When ETH price hits $4000, swap all ETH to USDC",
+  // Multi-step DCA strategy with swap + stake
+  "Every Monday at 9am, swap 25% of my GAS to NEO and stake all of it",
+  // Price-triggered profit taking with multi-step
+  "When NEO rises above $25, swap 50% of my NEO to GAS and transfer 100 GAS to NKuyBkoGdZZSLyPbJEetheRhMjezqzTxPo",
+  // Complex time-based portfolio rebalancing
+  "Every day at midnight, swap 10% of my bNEO to GAS, then stake 75% of my remaining bNEO",
+  // Price-triggered accumulation strategy
+  "If GAS drops below $3, swap 500 GAS to bNEO and stake 100% of my bNEO",
 ];
 
 export function NLInput() {
   const [input, setInput] = useState("");
   const [showExamples, setShowExamples] = useState(false);
+  const [localError, setLocalError] = useState<ParseErrorResponse["error"] | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const {
@@ -57,11 +64,29 @@ export function NLInput() {
     if (!input.trim() || isParsing) return;
 
     clearErrors();
+    setLocalError(null);
     setIsParsing(true);
 
     try {
       // Step 1: Parse the natural language input
       const parseResponse = await apiClient.parseWorkflow(input);
+
+      // Check for API-level errors
+      if (!parseResponse.success && parseResponse.error) {
+        setLocalError({
+          code: parseResponse.error.code,
+          message: parseResponse.error.message,
+          details: parseResponse.error.details,
+          retry: parseResponse.error.code === "NETWORK_ERROR",
+        });
+        return;
+      }
+
+      // Check for parse errors in the response data
+      if (parseResponse.data?.error) {
+        setLocalError(parseResponse.data.error);
+        return;
+      }
 
       if (parseResponse.data?.workflow_spec) {
         setWorkflowSpec(parseResponse.data.workflow_spec);
@@ -72,23 +97,37 @@ export function NLInput() {
           parseResponse.data.workflow_spec
         );
 
+        // Check for generation errors
+        if (!generateResponse.success && generateResponse.error) {
+          setLocalError({
+            code: generateResponse.error.code,
+            message: generateResponse.error.message,
+            details: generateResponse.error.details,
+            retry: generateResponse.error.code === "NETWORK_ERROR",
+          });
+          return;
+        }
+
+        // Check for generation errors in response data
+        if (generateResponse.data?.error) {
+          setLocalError(generateResponse.data.error);
+          return;
+        }
+
         if (generateResponse.data) {
-          // Map API nodes to GraphNode type with explicit typing
+          // Map API nodes to GraphNode type
+          // Backend now includes all parameters in node.data
           const nodes = (generateResponse.data.nodes || []).map((node) => {
             const nodeLabel = typeof node.label === "string" ? node.label : "";
             const dataLabel = typeof node.data?.label === "string" ? node.data.label : "";
-            const icon = typeof node.data?.icon === "string" ? node.data.icon : undefined;
-            const status = typeof node.data?.status === "string" ? node.data.status : undefined;
 
             return {
               id: node.id,
               type: node.type,
               position: node.position,
               data: {
-                ...node.data,
+                ...node.data,  // Includes all parameters (token, amount, percentage, etc.)
                 label: nodeLabel || dataLabel || "Untitled",
-                icon,
-                status,
               },
             };
           });
@@ -96,9 +135,22 @@ export function NLInput() {
           setEdges(generateResponse.data.edges || []);
           setWorkflowId(generateResponse.data.workflow_id || null);
         }
+      } else {
+        // No workflow spec and no error - generic failure
+        setLocalError({
+          code: "PARSE_ERROR",
+          message: "Could not understand the workflow description. Please try rephrasing.",
+          retry: false,
+        });
       }
     } catch (err) {
       console.error("Workflow generation error:", err);
+      setLocalError({
+        code: "UNKNOWN_ERROR",
+        message: err instanceof Error ? err.message : "An unexpected error occurred",
+        details: err instanceof Error ? err.stack : undefined,
+        retry: true,
+      });
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -136,7 +188,16 @@ export function NLInput() {
 
   const handleClear = () => {
     setInput("");
+    setLocalError(null);
     textareaRef.current?.focus();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    // Clear error when user starts typing
+    if (localError) {
+      setLocalError(null);
+    }
   };
 
   return (
@@ -145,14 +206,15 @@ export function NLInput() {
         {/* Main input container */}
         <div
           className={cn(
-            "relative rounded-xl border bg-card/95 backdrop-blur-sm transition-all duration-200",
-            "border-border hover:border-muted-foreground/30",
-            "focus-within:border-spica/50 focus-within:shadow-[0_0_20px_rgba(0,255,72,0.1)]"
+            "relative rounded-xl border transition-all duration-200",
+            "bg-zinc-900/50 border-zinc-800/60",
+            "hover:border-zinc-700/80",
+            "focus-within:border-spica/40 focus-within:shadow-[0_0_20px_rgba(0,255,72,0.08)]"
           )}
         >
           {/* Input area */}
           <div className="flex items-start gap-3 p-3">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-spica/10">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-spica/10 border border-spica/20">
               <Sparkles className="h-4 w-4 text-spica" />
             </div>
 
@@ -160,12 +222,12 @@ export function NLInput() {
               <Textarea
                 ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Describe your DeFi workflow in plain English..."
                 className={cn(
                   "min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent p-0",
-                  "text-sm placeholder:text-muted-foreground/60",
+                  "text-sm text-zinc-100 placeholder:text-zinc-500",
                   "focus-visible:ring-0 focus-visible:ring-offset-0"
                 )}
                 disabled={isParsing}
@@ -179,7 +241,7 @@ export function NLInput() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 flex-shrink-0"
+                    className="h-8 w-8 flex-shrink-0 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
                     onClick={handleClear}
                   >
                     <X className="h-4 w-4" />
@@ -191,12 +253,12 @@ export function NLInput() {
           </div>
 
           {/* Action bar */}
-          <div className="flex items-center justify-between border-t border-border/50 px-3 py-2">
+          <div className="flex items-center justify-between border-t border-zinc-800/50 px-3 py-2">
             {/* Examples dropdown */}
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 gap-1.5 text-xs text-muted-foreground"
+              className="h-7 gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
               onClick={() => setShowExamples(!showExamples)}
             >
               <Lightbulb className="h-3.5 w-3.5" />
@@ -234,20 +296,20 @@ export function NLInput() {
 
         {/* Examples dropdown panel */}
         {showExamples && (
-          <div className="absolute left-0 right-0 top-full z-10 mt-2 rounded-lg border border-border bg-card p-2 shadow-lg animate-fade-in-up">
+          <div className="absolute left-0 right-0 top-full z-10 mt-2 rounded-lg border border-zinc-800/60 bg-zinc-900/95 backdrop-blur-sm p-2 shadow-xl animate-fade-in-up">
             <div className="space-y-1">
               {examplePrompts.map((example, index) => (
                 <button
                   key={index}
                   className={cn(
-                    "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
-                    "hover:bg-accent hover:text-accent-foreground"
+                    "w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 transition-colors",
+                    "hover:bg-zinc-800/60 hover:text-zinc-100"
                   )}
                   onClick={() => handleExampleClick(example)}
                 >
-                  <span className="text-muted-foreground">&quot;</span>
+                  <span className="text-zinc-600">&quot;</span>
                   {example}
-                  <span className="text-muted-foreground">&quot;</span>
+                  <span className="text-zinc-600">&quot;</span>
                 </button>
               ))}
             </div>
@@ -256,11 +318,21 @@ export function NLInput() {
 
         {/* Keyboard hint */}
         <div className="mt-3 text-center">
-          <span className="text-xs text-muted-foreground">
-            Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-medium">Enter</kbd> to generate,{" "}
-            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs font-medium">Shift+Enter</kbd> for new line
+          <span className="text-xs text-zinc-600">
+            Press <kbd className="rounded border border-zinc-800 bg-zinc-900/80 px-1.5 py-0.5 text-xs font-medium text-zinc-400">Enter</kbd> to generate,{" "}
+            <kbd className="rounded border border-zinc-800 bg-zinc-900/80 px-1.5 py-0.5 text-xs font-medium text-zinc-400">Shift+Enter</kbd> for new line
           </span>
         </div>
+
+        {/* Error display */}
+        {localError && (
+          <div className="mt-4">
+            <ParseErrorDisplay
+              error={localError}
+              onRetry={localError.retry ? handleSubmit : undefined}
+            />
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );

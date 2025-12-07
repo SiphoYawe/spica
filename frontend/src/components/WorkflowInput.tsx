@@ -284,19 +284,19 @@ export default function WorkflowInput({ onWorkflowGenerated }: WorkflowInputProp
                 </button>
               ))
             ) : (
-              // Fallback examples
+              // Fallback examples - complex real-world workflows showcasing full Spica capabilities
               <div className="space-y-2">
                 <ExampleButton onClick={handleExampleClick} disabled={isLoading}>
-                  When GAS drops below $5, swap 10 GAS for NEO
+                  Every Monday at 9am, swap 25% of my GAS to NEO and stake all of it
                 </ExampleButton>
                 <ExampleButton onClick={handleExampleClick} disabled={isLoading}>
-                  Every day at 9 AM, stake 50% of my bNEO
+                  When NEO rises above $25, swap 50% of my NEO to GAS and transfer 100 GAS to NKuyBkoGdZZSLyPbJEetheRhMjezqzTxPo
                 </ExampleButton>
                 <ExampleButton onClick={handleExampleClick} disabled={isLoading}>
-                  If NEO price rises above $20, transfer 5 NEO to NXXXabc123...
+                  Every day at midnight, swap 10% of my bNEO to GAS, then stake 75% of my remaining bNEO
                 </ExampleButton>
                 <ExampleButton onClick={handleExampleClick} disabled={isLoading}>
-                  Swap 100 GAS to bNEO and stake all of it
+                  If GAS drops below $3, swap 500 GAS to bNEO and stake 100% of my bNEO
                 </ExampleButton>
               </div>
             )}

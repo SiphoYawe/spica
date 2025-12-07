@@ -163,11 +163,11 @@ export default function ParseErrorDisplay({ error, onRetry }: ParseErrorDisplayP
             </button>
             {showSuggestions && (
               <div id="example-workflows" className="mt-3 space-y-2 text-xs opacity-90">
-                <p className="font-semibold">Example formats:</p>
+                <p className="font-semibold">Complex workflow examples (use GAS, NEO, or bNEO):</p>
                 <ul className="list-disc list-inside space-y-1 opacity-80">
-                  <li>&quot;When GAS price drops below $5, swap 10 GAS for NEO&quot;</li>
-                  <li>&quot;Every day at 9 AM, stake 50% of my bNEO&quot;</li>
-                  <li>&quot;If NEO rises above $20, transfer 5 NEO to address NXX...&quot;</li>
+                  <li>&quot;Every Monday at 9am, swap 25% of my GAS to NEO and stake all of it&quot;</li>
+                  <li>&quot;When NEO rises above $25, swap 50% to GAS and transfer 100 GAS to NKuyBko...&quot;</li>
+                  <li>&quot;If GAS drops below $3, swap 500 GAS to bNEO and stake 100% of my bNEO&quot;</li>
                 </ul>
               </div>
             )}

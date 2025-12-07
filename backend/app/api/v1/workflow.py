@@ -2,7 +2,7 @@
 Workflow parsing endpoints for API v1
 """
 
-from fastapi import APIRouter, HTTPException, status, Request
+from fastapi import APIRouter, HTTPException, status, Request, Query
 from fastapi.responses import JSONResponse
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field, field_validator
@@ -22,6 +22,7 @@ from app.agents import (
 )
 from app.services.graph_assembler import get_graph_assembler
 from app.services.workflow_storage import get_workflow_storage
+from app.services.execution_storage import get_execution_storage
 from app.models.workflow_models import (
     WorkflowSpec,
     ParserSuccess,
@@ -446,17 +447,43 @@ async def list_workflows(
         # Convert to summaries
         summaries = []
         for w in workflows:
-            # Build trigger summary
-            trigger = w.assembled_graph.workflow_spec.trigger
+            # Build trigger summary - handle legacy workflows without workflow_spec
+            workflow_spec = w.assembled_graph.workflow_spec
+            trigger = workflow_spec.trigger if workflow_spec else None
+            trigger_type = "manual"
+            trigger_summary = "Manual execution"
+
             if trigger:
+                trigger_type = trigger.type
                 if trigger.type == "price":
-                    trigger_summary = f"When {trigger.token} {trigger.operator} ${trigger.value}"
+                    trigger_summary = f"When {trigger.token.value} {trigger.operator} ${trigger.value}"
                 elif trigger.type == "time":
-                    trigger_summary = f"At {trigger.time}" if trigger.time else f"Every {trigger.interval}"
+                    trigger_summary = f"Schedule: {trigger.schedule}"
                 else:
                     trigger_summary = f"{trigger.type} trigger"
-            else:
-                trigger_summary = "Manual execution"
+            elif w.assembled_graph.state_graph_config:
+                # Fallback: extract trigger info from state_graph_config for legacy workflows
+                state_config = w.assembled_graph.state_graph_config
+                trigger_data = state_config.get("trigger", {})
+                trigger_type = trigger_data.get("type", "manual")
+                trigger_params = trigger_data.get("params", {})
+
+                if trigger_type == "price":
+                    token = trigger_params.get("token", "?")
+                    # Handle both new format (operator/value) and legacy format (condition/threshold)
+                    operator = trigger_params.get("operator") or trigger_params.get("condition", "?")
+                    value = trigger_params.get("value") or trigger_params.get("threshold", "?")
+                    # Normalize condition names for display
+                    if operator == "less_than":
+                        operator = "below"
+                    elif operator == "greater_than":
+                        operator = "above"
+                    trigger_summary = f"When {token} {operator} ${value}"
+                elif trigger_type == "time":
+                    schedule = trigger_params.get("schedule", "unknown schedule")
+                    trigger_summary = f"Schedule: {schedule}"
+                else:
+                    trigger_summary = f"{trigger_type} trigger"
 
             summaries.append(WorkflowSummary(
                 workflow_id=w.workflow_id,
@@ -464,7 +491,7 @@ async def list_workflows(
                 workflow_description=w.assembled_graph.workflow_description,
                 status=w.status,
                 enabled=w.enabled,
-                trigger_type=trigger.type if trigger else "manual",
+                trigger_type=trigger_type,
                 trigger_summary=trigger_summary,
                 execution_count=w.execution_count,
                 created_at=w.created_at,
@@ -543,17 +570,43 @@ async def get_workflow(workflow_id: str) -> WorkflowDetailResponse:
         storage = get_workflow_storage()
         w = await storage.load_workflow(workflow_id)
 
-        # Build trigger summary
-        trigger = w.assembled_graph.workflow_spec.trigger
+        # Build trigger summary - handle legacy workflows without workflow_spec
+        workflow_spec = w.assembled_graph.workflow_spec
+        trigger = workflow_spec.trigger if workflow_spec else None
+        trigger_type = "manual"
+        trigger_summary = "Manual execution"
+
         if trigger:
+            trigger_type = trigger.type
             if trigger.type == "price":
-                trigger_summary = f"When {trigger.token} {trigger.operator} ${trigger.value}"
+                trigger_summary = f"When {trigger.token.value} {trigger.operator} ${trigger.value}"
             elif trigger.type == "time":
-                trigger_summary = f"At {trigger.time}" if trigger.time else f"Every {trigger.interval}"
+                trigger_summary = f"Schedule: {trigger.schedule}"
             else:
                 trigger_summary = f"{trigger.type} trigger"
-        else:
-            trigger_summary = "Manual execution"
+        elif w.assembled_graph.state_graph_config:
+            # Fallback: extract trigger info from state_graph_config for legacy workflows
+            state_config = w.assembled_graph.state_graph_config
+            trigger_data = state_config.get("trigger", {})
+            trigger_type = trigger_data.get("type", "manual")
+            trigger_params = trigger_data.get("params", {})
+
+            if trigger_type == "price":
+                token = trigger_params.get("token", "?")
+                # Handle both new format (operator/value) and legacy format (condition/threshold)
+                operator = trigger_params.get("operator") or trigger_params.get("condition", "?")
+                value = trigger_params.get("value") or trigger_params.get("threshold", "?")
+                # Normalize condition names for display
+                if operator == "less_than":
+                    operator = "below"
+                elif operator == "greater_than":
+                    operator = "above"
+                trigger_summary = f"When {token} {operator} ${value}"
+            elif trigger_type == "time":
+                schedule = trigger_params.get("schedule", "unknown schedule")
+                trigger_summary = f"Schedule: {schedule}"
+            else:
+                trigger_summary = f"{trigger_type} trigger"
 
         # Convert nodes and edges
         nodes = [n.model_dump() for n in w.assembled_graph.react_flow.nodes]
@@ -566,7 +619,7 @@ async def get_workflow(workflow_id: str) -> WorkflowDetailResponse:
             workflow_description=w.assembled_graph.workflow_description,
             status=w.status,
             enabled=w.enabled,
-            trigger_type=trigger.type if trigger else "manual",
+            trigger_type=trigger_type,
             trigger_summary=trigger_summary,
             nodes=nodes,
             edges=edges,
@@ -830,21 +883,53 @@ async def delete_workflow(workflow_id: str) -> DeleteWorkflowResponse:
 @router.get(
     "/parse/examples",
     summary="Get example workflows",
-    description="Returns example workflow specifications for reference",
+    description="Returns example natural language prompts for reference",
     tags=["workflow"]
 )
 async def get_example_workflows():
     """
-    Get example workflow specifications.
+    Get example workflow prompts.
 
-    Returns pre-defined example workflows to help users understand
-    the format and capabilities of the workflow system.
+    Returns pre-defined example natural language inputs to help users
+    understand how to describe workflows.
 
     Returns:
-        dict: Example workflows with their specifications
+        dict: Example workflow prompts with descriptions
     """
-    parser = get_parser()
-    examples = parser.get_example_workflows()
+    # Complex real-world workflow examples showcasing full Spica capabilities
+    # Features: Multi-step workflows, price triggers, time triggers, all action types, percentage & fixed amounts
+    examples = [
+        {
+            "input": "Every Monday at 9am, swap 25% of my GAS to NEO and stake all of it",
+            "description": "Weekly DCA strategy: Convert GAS to NEO and compound via staking",
+            "category": "multi-step"
+        },
+        {
+            "input": "When NEO rises above $25, swap 50% of my NEO to GAS and transfer 100 GAS to NikhQp1aAD1YFCiwknhM5LQQebj4464bCJ",
+            "description": "Profit-taking automation: Sell NEO at target price and send profits to savings wallet",
+            "category": "multi-step"
+        },
+        {
+            "input": "Every day at midnight, swap 10% of my bNEO to GAS, then stake 75% of my remaining bNEO",
+            "description": "Daily portfolio rebalancing: Harvest bNEO rewards and re-stake for compounding",
+            "category": "multi-step"
+        },
+        {
+            "input": "If GAS drops below $3, swap 500 GAS to bNEO and stake 100% of my bNEO",
+            "description": "Buy-the-dip automation: Accumulate bNEO when GAS is cheap and stake immediately",
+            "category": "multi-step"
+        },
+        {
+            "input": "Every Friday at 6pm, transfer 50 GAS to NikhQp1aAD1YFCiwknhM5LQQebj4464bCJ and stake 100% of my NEO",
+            "description": "Weekly savings routine: Send GAS to cold wallet and stake remaining NEO",
+            "category": "multi-step"
+        },
+        {
+            "input": "When bNEO rises above $18, swap 30% of my bNEO to NEO, swap 20% to GAS, and transfer 25 NEO to NikhQp1aAD1YFCiwknhM5LQQebj4464bCJ",
+            "description": "Advanced profit distribution: Diversify gains across tokens and secure profits",
+            "category": "multi-step"
+        }
+    ]
 
     return {
         "success": True,
@@ -1287,6 +1372,71 @@ async def generate_workflow_graph(
                     "code": "INTERNAL_ERROR",
                     "message": "An unexpected error occurred during graph generation",
                     "details": f"Please contact support with error ID: {error_id}",
+                    "retry": True
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
+
+# ============================================================================
+# Workflow Executions Endpoint - Task 4.2
+# ============================================================================
+
+@router.get(
+    "/workflows/{workflow_id}/executions",
+    summary="Get workflow executions",
+    description="Get recent executions for a specific workflow",
+    tags=["workflow"]
+)
+async def get_workflow_executions(
+    workflow_id: str,
+    limit: int = Query(10, ge=1, le=50, description="Number of executions to return")
+):
+    """
+    Get recent executions for a specific workflow.
+
+    This endpoint returns the execution history for a workflow,
+    showing the most recent executions first.
+
+    Args:
+        workflow_id: Workflow identifier
+        limit: Maximum number of executions to return (default: 10, max: 50)
+
+    Returns:
+        List of execution records for the workflow
+    """
+    logger.info(f"Getting executions for workflow: {workflow_id}")
+
+    try:
+        storage = await get_execution_storage()
+        executions = await storage.get_workflow_executions(workflow_id, limit=limit)
+
+        return [
+            {
+                "execution_id": e.execution_id,
+                "workflow_id": e.workflow_id,
+                "workflow_name": e.workflow_name,
+                "status": e.status,
+                "trigger_type": e.trigger_type,
+                "started_at": e.started_at.isoformat(),
+                "completed_at": e.completed_at.isoformat() if e.completed_at else None,
+                "error": e.error
+            }
+            for e in executions
+        ]
+
+    except Exception as e:
+        error_id = str(uuid.uuid4())[:8]
+        logger.error(f"Failed to get workflow executions [error_id={error_id}]: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "Failed to get workflow executions",
+                    "details": f"Error ID: {error_id}",
                     "retry": True
                 },
                 "timestamp": datetime.now(UTC).isoformat()
