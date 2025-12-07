@@ -26,23 +26,49 @@ router = APIRouter()
 
 async def check_neo_rpc() -> ServiceStatus:
     """Check Neo RPC connectivity"""
+    from app.services.neo_rpc import get_neo_rpc, NeoRPCError
+
     try:
         start_time = time.time()
-        # TODO: Actually check Neo RPC when neo_service is implemented
-        # For now, simulate a check
-        await asyncio.sleep(0.05)  # Simulate network latency
+        rpc = await get_neo_rpc()
+        block_count = await rpc.get_block_count()
         latency = (time.time() - start_time) * 1000
 
         return ServiceStatus(
             status=ServiceStatusValue.OK,
-            message="Connected to Neo N3 testnet",
+            message=f"Connected to Neo N3, block height: {block_count}",
             latency_ms=round(latency, 2)
         )
     except Exception as e:
         logger.error(f"Neo RPC health check failed: {str(e)}", exc_info=True)
         return ServiceStatus(
             status=ServiceStatusValue.DOWN,
-            message="Neo RPC service unavailable",
+            message=f"Neo RPC service unavailable: {str(e)}",
+            latency_ms=None
+        )
+
+
+async def check_price_monitor() -> ServiceStatus:
+    """Check price monitor service"""
+    from app.services.price_monitor import get_price_monitor
+    from app.models.workflow_models import TokenType
+
+    try:
+        start_time = time.time()
+        monitor = await get_price_monitor()
+        price = await monitor.get_price(TokenType.GAS)
+        latency = (time.time() - start_time) * 1000
+
+        return ServiceStatus(
+            status=ServiceStatusValue.OK,
+            message=f"Price monitor active, source: {price.source}, GAS price: ${price.price_usd}",
+            latency_ms=round(latency, 2)
+        )
+    except Exception as e:
+        logger.error(f"Price monitor health check failed: {str(e)}", exc_info=True)
+        return ServiceStatus(
+            status=ServiceStatusValue.DOWN,
+            message=f"Price monitor unavailable: {str(e)}",
             latency_ms=None
         )
 
@@ -99,14 +125,16 @@ async def detailed_health(response: Response) -> DetailedHealthResponse:
         latency_ms=None
     )
 
-    neo_status, spoonos_status = await asyncio.gather(
+    neo_status, price_monitor_status, spoonos_status = await asyncio.gather(
         check_neo_rpc(),
+        check_price_monitor(),
         check_spoonos()
     )
 
     services = {
         "api": api_status,
         "neo_rpc": neo_status,
+        "price_monitor": price_monitor_status,
         "spoonos": spoonos_status
     }
 

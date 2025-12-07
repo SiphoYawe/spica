@@ -112,8 +112,8 @@ class AssembledGraph(BaseModel):
     workflow_name: str = Field(..., description="User-friendly workflow name")
     workflow_description: str = Field(..., description="Workflow description")
 
-    # Original workflow specification
-    workflow_spec: WorkflowSpec = Field(..., description="Original WorkflowSpec used to create this graph")
+    # Original workflow specification (optional for backwards compatibility with existing workflows)
+    workflow_spec: Optional[WorkflowSpec] = Field(None, description="Original WorkflowSpec used to create this graph")
 
     # React Flow visualization
     react_flow: ReactFlowGraph = Field(..., description="React Flow graph data")

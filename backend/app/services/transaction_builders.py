@@ -12,6 +12,7 @@ Implements Stories 5.2, 5.3, and 5.4
 import logging
 import asyncio
 import base64
+import os
 from typing import Optional, Dict, Any
 from decimal import Decimal
 from datetime import datetime, UTC
@@ -20,14 +21,20 @@ try:
     from neo3.wallet.account import Account as NeoAccount
     from neo3.core import types
     from neo3.contracts import vm
+    from neo3.contracts.vm import ScriptBuilder
+    from neo3.vm import opcode
     from neo3.core.cryptography import hash as neo_hash
+    from neo3.network import payloads
     NEO3_AVAILABLE = True
 except ImportError:
     NEO3_AVAILABLE = False
     NeoAccount = None
     types = None
     vm = None
+    ScriptBuilder = None
+    opcode = None
     neo_hash = None
+    payloads = None
 
 from app.config import settings
 from app.services.execution_engine import (
@@ -68,23 +75,17 @@ class ContractHashes:
 
     @classmethod
     def get_token_hash(cls, token: TokenType) -> str:
-        """Get contract hash for a token type"""
-        mapping = {
-            TokenType.GAS: cls.GAS,
-            TokenType.NEO: cls.NEO,
-            TokenType.BNEO: cls.BNEO
-        }
-        return mapping[token]
+        """Get contract hash for a token type using registry"""
+        from app.services.contract_registry import get_contract_registry
+        registry = get_contract_registry()
+        return registry.get_token_hash(token.value)
 
     @classmethod
     def get_token_decimals(cls, token: TokenType) -> int:
-        """Get decimals for a token type"""
-        mapping = {
-            TokenType.GAS: 8,
-            TokenType.NEO: 0,
-            TokenType.BNEO: 8
-        }
-        return mapping[token]
+        """Get decimals for a token type using registry"""
+        from app.services.contract_registry import get_contract_registry
+        registry = get_contract_registry()
+        return registry.get_decimals(token.value)
 
 
 # ============================================================================
@@ -133,6 +134,22 @@ class BaseTransactionBuilder:
         """Get the wallet address for the transaction"""
         engine = await self._get_execution_engine()
         return await engine.get_address()
+
+    def _address_to_script_hash(self, address: str) -> str:
+        """
+        Convert Neo N3 address to script hash (big-endian hex).
+
+        Args:
+            address: Neo N3 address (e.g., NXXXxxxXXX...)
+
+        Returns:
+            Script hash as hex string with 0x prefix
+        """
+        if not NEO3_AVAILABLE or NeoAccount is None:
+            raise TransactionError("neo3 library not available for address conversion")
+
+        script_hash = NeoAccount.address_to_script_hash(address)
+        return str(script_hash)
 
     async def _validate_balance(
         self,
@@ -230,6 +247,205 @@ class BaseTransactionBuilder:
             system_fee=Decimal("0.01"),   # Typical system fee
             timestamp=datetime.now(UTC)
         )
+
+    async def _sign_transaction(
+        self,
+        script: bytes,
+        signer_address: str,
+        signer_wif: Optional[str] = None
+    ) -> str:
+        """
+        Create and sign a Neo N3 transaction.
+
+        Args:
+            script: Neo VM script bytes
+            signer_address: Address of the signer
+            signer_wif: WIF private key (from env if not provided)
+
+        Returns:
+            Base64-encoded signed transaction
+        """
+        if not NEO3_AVAILABLE or payloads is None:
+            raise TransactionError("neo3 library not available for transaction signing")
+
+        from app.services.neo_rpc import get_neo_rpc
+
+        rpc = await get_neo_rpc()
+
+        # Get current block height for validity window
+        block_height = await rpc.get_block_count()
+
+        # Load account from WIF
+        wif = signer_wif or settings.demo_wallet_wif
+        if not wif:
+            raise TransactionError("No wallet WIF configured")
+
+        signer_account = NeoAccount.from_wif(wif)
+
+        # Create transaction
+        tx = payloads.Transaction(
+            version=0,
+            nonce=int.from_bytes(os.urandom(4), 'little'),
+            system_fee=0,  # Will be calculated
+            network_fee=0,  # Will be calculated
+            valid_until_block=block_height + 5760,  # ~1 day
+            attributes=[],
+            signers=[
+                payloads.Signer(
+                    account=signer_account.script_hash,
+                    scope=payloads.WitnessScope.CALLED_BY_ENTRY
+                )
+            ],
+            script=script,
+            witnesses=[]
+        )
+
+        # Calculate system fee via test invoke
+        script_base64 = base64.b64encode(script).decode()
+        invoke_result = await rpc.invoke_script(
+            script_base64,
+            [{"account": str(signer_account.script_hash), "scopes": "CalledByEntry"}]
+        )
+
+        if invoke_result.get("state") != "HALT":
+            raise TransactionError(f"Script execution failed: {invoke_result.get('exception')}")
+
+        system_fee = int(invoke_result["gasconsumed"])
+        tx.system_fee = system_fee + 100000  # Add small buffer
+
+        # Calculate network fee
+        unsigned_tx_base64 = base64.b64encode(tx.to_array()).decode()
+        network_fee = await rpc.calculate_network_fee(unsigned_tx_base64)
+        tx.network_fee = network_fee
+
+        # Sign transaction
+        tx_hash = tx.hash()
+        signature = signer_account.sign(tx_hash.to_array())
+
+        # Create witness
+        invocation_script_builder = ScriptBuilder()
+        invocation_script_builder.emit_push(signature)
+
+        verification_script = signer_account.contract.script
+
+        tx.witnesses = [
+            payloads.Witness(
+                invocation_script=invocation_script_builder.to_array(),
+                verification_script=verification_script
+            )
+        ]
+
+        # Serialize to base64
+        return base64.b64encode(tx.to_array()).decode()
+
+    async def _broadcast_transaction(self, signed_tx: str) -> str:
+        """
+        Broadcast signed transaction to network.
+
+        Args:
+            signed_tx: Base64-encoded signed transaction
+
+        Returns:
+            Transaction hash
+        """
+        from app.services.neo_rpc import get_neo_rpc
+        rpc = await get_neo_rpc()
+
+        return await rpc.send_raw_transaction(signed_tx)
+
+    async def _execute_transaction(
+        self,
+        script: bytes,
+        signer_address: str,
+        wait_confirmation: bool = True
+    ) -> TransactionResult:
+        """
+        Sign, broadcast, and optionally wait for confirmation.
+
+        Returns:
+            TransactionResult with txid, block_height, etc.
+        """
+        from app.services.neo_rpc import get_neo_rpc
+        rpc = await get_neo_rpc()
+
+        # Sign
+        signed_tx = await self._sign_transaction(script, signer_address)
+
+        # Broadcast
+        tx_hash = await self._broadcast_transaction(signed_tx)
+        logger.info(f"Transaction broadcast: {tx_hash}")
+
+        if wait_confirmation:
+            # Wait for confirmation
+            app_log = await rpc.wait_for_confirmation(tx_hash)
+
+            # Extract details from log
+            execution = app_log["executions"][0]
+            gas_consumed = Decimal(execution["gasconsumed"]) / Decimal(10 ** 8)
+
+            # Get transaction details
+            tx_info = await rpc.get_raw_transaction(tx_hash)
+
+            return TransactionResult(
+                txid=tx_hash,
+                block_height=tx_info.get("blockindex"),
+                confirmations=tx_info.get("confirmations", 1),
+                network_fee=Decimal(tx_info.get("netfee", 0)) / Decimal(10 ** 8),
+                system_fee=Decimal(tx_info.get("sysfee", 0)) / Decimal(10 ** 8),
+                timestamp=datetime.now(UTC)
+            )
+        else:
+            return TransactionResult(
+                txid=tx_hash,
+                timestamp=datetime.now(UTC)
+            )
+
+    async def _get_token_balance(
+        self,
+        token: TokenType,
+        address: str
+    ) -> Decimal:
+        """
+        Get token balance for address.
+
+        Args:
+            token: Token type
+            address: Neo N3 address
+
+        Returns:
+            Balance as Decimal
+        """
+        from app.services.neo_rpc import get_neo_rpc
+        from app.services.contract_registry import get_contract_registry
+
+        try:
+            rpc = await get_neo_rpc()
+            registry = get_contract_registry()
+
+            if token == TokenType.GAS:
+                return await rpc.get_gas_balance(address)
+            elif token == TokenType.NEO:
+                return Decimal(await rpc.get_neo_balance(address))
+            else:
+                # For bNEO and other tokens, query via balanceOf
+                token_hash = registry.get_token_hash(token.value)
+                decimals = registry.get_decimals(token.value)
+
+                result = await rpc.invoke_function(
+                    token_hash,
+                    "balanceOf",
+                    [{"type": "Hash160", "value": self._address_to_script_hash(address)}]
+                )
+
+                if result.get("state") == "HALT" and result.get("stack"):
+                    balance_int = int(result["stack"][0].get("value", 0))
+                    return Decimal(balance_int) / Decimal(10 ** decimals)
+
+                return Decimal(0)
+
+        except Exception as e:
+            logger.warning(f"Failed to get balance for {token}: {e}")
+            return Decimal(0)
 
 
 # ============================================================================
@@ -334,20 +550,23 @@ class SwapTransactionBuilder(BaseTransactionBuilder):
 
         # Live mode: build and execute real transaction
         try:
+            # Get user address
+            user_address = await self._get_wallet_address()
+
+            # Build script
             script = await self._build_swap_script(
                 action.from_token,
                 action.to_token,
                 swap_amount,
-                min_output
+                min_output,
+                user_address
             )
 
-            # Sign and execute transaction
-            engine = await self._get_execution_engine()
-            signed_tx = await self._sign_transaction(script, engine)
-
-            result = await engine.execute_transaction(
-                signed_tx,
-                wait_for_confirmation=True
+            # Execute transaction (sign, broadcast, confirm)
+            result = await self._execute_transaction(
+                script,
+                user_address,
+                wait_confirmation=True
             )
 
             logger.info(f"Swap transaction executed successfully: {result.txid}")
@@ -364,30 +583,74 @@ class SwapTransactionBuilder(BaseTransactionBuilder):
         amount: Decimal
     ) -> Decimal:
         """
-        Calculate expected swap output amount.
-
-        In production, this would query the DEX for current pool prices.
-        For demo, we use mock prices.
-
-        Args:
-            from_token: Source token
-            to_token: Destination token
-            amount: Amount to swap
-
-        Returns:
-            Expected output amount
+        Calculate expected swap output using Flamingo DEX.
+        Queries the Router contract for expected output.
         """
-        # Mock exchange rates for demo (in production, query Flamingo DEX)
+        from app.services.neo_rpc import get_neo_rpc
+        from app.services.contract_registry import get_contract_registry
+
+        registry = get_contract_registry()
+
+        from_hash = registry.get_token_hash(from_token.value)
+        to_hash = registry.get_token_hash(to_token.value)
+        router_hash = registry.get_flamingo_hash("SWAP_ROUTER")
+
+        from_decimals = registry.get_decimals(from_token.value)
+        to_decimals = registry.get_decimals(to_token.value)
+        amount_int = int(amount * Decimal(10 ** from_decimals))
+
+        try:
+            rpc = await get_neo_rpc()
+
+            # Call getAmountsOut on router
+            result = await rpc.invoke_function(
+                router_hash,
+                "getAmountsOut",
+                [
+                    {"type": "Integer", "value": str(amount_int)},
+                    {"type": "Array", "value": [
+                        {"type": "Hash160", "value": from_hash},
+                        {"type": "Hash160", "value": to_hash}
+                    ]}
+                ]
+            )
+
+            if result.get("state") != "HALT":
+                logger.warning(f"getAmountsOut failed: {result.get('exception')}")
+                # Fallback to mock calculation
+                return await self._calculate_swap_output_mock(from_token, to_token, amount)
+
+            # Parse output amount from stack
+            stack = result.get("stack", [])
+            if stack and stack[0].get("value"):
+                amounts = stack[0]["value"]
+                output_amount = int(amounts[-1]["value"])  # Last amount in path
+                return Decimal(output_amount) / Decimal(10 ** to_decimals)
+
+            # Fallback to mock
+            return await self._calculate_swap_output_mock(from_token, to_token, amount)
+
+        except Exception as e:
+            logger.warning(f"Failed to query DEX for swap output: {e}")
+            return await self._calculate_swap_output_mock(from_token, to_token, amount)
+
+    async def _calculate_swap_output_mock(
+        self,
+        from_token: TokenType,
+        to_token: TokenType,
+        amount: Decimal
+    ) -> Decimal:
+        """Fallback mock calculation for swap output."""
         mock_prices = {
-            TokenType.GAS: Decimal("5.0"),   # $5 per GAS
-            TokenType.NEO: Decimal("15.0"),  # $15 per NEO
-            TokenType.BNEO: Decimal("14.5")  # $14.5 per bNEO (slight discount)
+            TokenType.GAS: Decimal("5.0"),
+            TokenType.NEO: Decimal("15.0"),
+            TokenType.BNEO: Decimal("14.5")
         }
 
-        from_value = amount * mock_prices[from_token]
-        output_amount = from_value / mock_prices[to_token]
+        from_value = amount * mock_prices.get(from_token, Decimal("1"))
+        output_amount = from_value / mock_prices.get(to_token, Decimal("1"))
 
-        # Apply 0.3% swap fee (typical for AMMs)
+        # Apply 0.3% swap fee
         output_amount = output_amount * Decimal("0.997")
 
         return output_amount
@@ -397,77 +660,92 @@ class SwapTransactionBuilder(BaseTransactionBuilder):
         from_token: TokenType,
         to_token: TokenType,
         amount: Decimal,
-        min_output: Decimal
+        min_output: Decimal,
+        user_address: str = None
     ) -> bytes:
         """
-        Build Neo N3 VM script for swap transaction.
+        Build Neo VM script for Flamingo DEX swap.
 
-        This creates a script that calls the Flamingo swap router contract.
-
-        Args:
-            from_token: Source token
-            to_token: Destination token
-            amount: Amount to swap
-            min_output: Minimum acceptable output
-
-        Returns:
-            Compiled VM script bytes
+        Flamingo swap uses the Router contract:
+        - Approve token spending
+        - Call swap method with path and amounts
         """
         if not NEO3_AVAILABLE:
             raise TransactionError("neo3 library not available for script building")
 
+        from app.services.contract_registry import get_contract_registry
+        from datetime import datetime
+
+        registry = get_contract_registry()
+
         # Get contract hashes
-        from_hash = ContractHashes.get_token_hash(from_token)
-        to_hash = ContractHashes.get_token_hash(to_token)
-        router_hash = ContractHashes.FLAMINGO_SWAP_ROUTER
+        from_hash = registry.get_token_hash(from_token.value)
+        to_hash = registry.get_token_hash(to_token.value)
+        router_hash = registry.get_flamingo_hash("SWAP_ROUTER")
 
-        # Convert amount to contract units (with decimals)
-        from_decimals = ContractHashes.get_token_decimals(from_token)
-        amount_units = int(amount * (Decimal(10) ** from_decimals))
+        # Get decimals and convert amounts
+        from_decimals = registry.get_decimals(from_token.value)
+        to_decimals = registry.get_decimals(to_token.value)
 
-        to_decimals = ContractHashes.get_token_decimals(to_token)
-        min_output_units = int(min_output * (Decimal(10) ** to_decimals))
+        amount_int = int(amount * Decimal(10 ** from_decimals))
+        min_output_int = int(min_output * Decimal(10 ** to_decimals))
 
-        # Get wallet address
-        address = await self._get_wallet_address()
+        # Get user address if not provided
+        if user_address is None:
+            user_address = await self._get_wallet_address()
 
-        # Build script (pseudo-code - actual implementation would use neo3.contracts.vm)
-        # This is a simplified example
-        logger.info(
-            f"Building swap script: router={router_hash}, "
-            f"from={from_hash}, to={to_hash}, amount={amount_units}"
+        user_hash = self._address_to_script_hash(user_address)
+
+        sb = ScriptBuilder()
+
+        # Step 1: Approve Router to spend from_token
+        # transfer(from, router, amount, "approve")
+        sb.emit_push(b"approve")  # data = "approve" signals approval
+        sb.emit_push(amount_int)
+        sb.emit_push(types.UInt160.from_string(router_hash[2:]).to_array())
+        sb.emit_push(types.UInt160.from_string(user_hash[2:]).to_array())
+        sb.emit_contract_call(
+            types.UInt160.from_string(from_hash[2:]),
+            "transfer"
+        )
+        sb.emit(opcode.OpCode.ASSERT)
+
+        # Step 2: Call Router swap
+        # swapTokenInForTokenOut(sender, amountIn, amountOutMin, path, deadline)
+        deadline = int((datetime.utcnow().timestamp() + 600) * 1000)  # 10 min
+
+        # Build path array [from_token, to_token]
+        path_from = types.UInt160.from_string(from_hash[2:])
+        path_to = types.UInt160.from_string(to_hash[2:])
+
+        # Push swap parameters (reverse order for stack)
+        sb.emit_push(deadline)
+
+        # Pack path array
+        sb.emit_push(path_to.to_array())
+        sb.emit_push(path_from.to_array())
+        sb.emit_push(2)  # Array length
+        sb.emit(opcode.OpCode.PACK)
+
+        sb.emit_push(min_output_int)
+        sb.emit_push(amount_int)
+        sb.emit_push(types.UInt160.from_string(user_hash[2:]).to_array())
+
+        sb.emit_contract_call(
+            types.UInt160.from_string(router_hash[2:]),
+            "swapTokenInForTokenOut"
         )
 
-        # For hackathon demo, return a placeholder script
-        # In production, this would be a proper VM script calling Flamingo
-        script = b'\x00' * 100  # Placeholder script
+        logger.info(
+            f"Built Flamingo swap script:\n"
+            f"  Router: {router_hash}\n"
+            f"  Path: {from_token.value} ({from_hash}) -> {to_token.value} ({to_hash})\n"
+            f"  Amount: {amount_int} units\n"
+            f"  Min Output: {min_output_int} units\n"
+            f"  Deadline: {deadline}"
+        )
 
-        return script
-
-    async def _sign_transaction(
-        self,
-        script: bytes,
-        engine: NeoExecutionEngine
-    ) -> str:
-        """
-        Sign transaction script and return base64-encoded signed transaction.
-
-        Args:
-            script: VM script bytes
-            engine: Execution engine with wallet
-
-        Returns:
-            Base64-encoded signed transaction
-        """
-        # This is a placeholder - actual implementation would:
-        # 1. Create Transaction object with script
-        # 2. Set network fee and system fee
-        # 3. Add witnesses (signatures)
-        # 4. Serialize and encode to base64
-
-        # For demo, return a mock signed transaction
-        signed_tx = base64.b64encode(script).decode('ascii')
-        return signed_tx
+        return sb.to_array()
 
 
 # ============================================================================
@@ -556,15 +834,18 @@ class StakeTransactionBuilder(BaseTransactionBuilder):
 
         # Live mode: build and execute real transaction
         try:
-            script = await self._build_stake_script(action.token, stake_amount)
+            user_address = await self._get_wallet_address()
 
-            # Sign and execute transaction
-            engine = await self._get_execution_engine()
-            signed_tx = await self._sign_transaction(script, engine)
+            script = await self._build_stake_script(
+                action.token,
+                stake_amount,
+                user_address
+            )
 
-            result = await engine.execute_transaction(
-                signed_tx,
-                wait_for_confirmation=True
+            result = await self._execute_transaction(
+                script,
+                user_address,
+                wait_confirmation=True
             )
 
             logger.info(f"Stake transaction executed successfully: {result.txid}")
@@ -577,51 +858,65 @@ class StakeTransactionBuilder(BaseTransactionBuilder):
     async def _build_stake_script(
         self,
         token: TokenType,
-        amount: Decimal
+        amount: Decimal,
+        user_address: str = None
     ) -> bytes:
         """
-        Build Neo N3 VM script for staking transaction.
+        Build Neo VM script for Flamingo staking.
+
+        For bNEO staking:
+        1. Transfer bNEO to staking pool
+        2. Pool automatically mints reward tokens
 
         Args:
-            token: Token to stake
+            token: Token to stake (bNEO)
             amount: Amount to stake
+            user_address: User's Neo address
 
         Returns:
-            Compiled VM script bytes
+            Compiled Neo VM script bytes
         """
         if not NEO3_AVAILABLE:
             raise TransactionError("neo3 library not available for script building")
 
+        from app.services.contract_registry import get_contract_registry
+
+        registry = get_contract_registry()
+
         # Get contract hashes
-        token_hash = ContractHashes.get_token_hash(token)
-        pool_hash = ContractHashes.FLAMINGO_STAKE_POOL
+        token_hash = registry.get_token_hash(token.value)
+        pool_hash = registry.get_flamingo_hash("FLUND_TOKEN")  # FLUND pool for bNEO staking
 
-        # Convert amount to contract units
-        decimals = ContractHashes.get_token_decimals(token)
-        amount_units = int(amount * (Decimal(10) ** decimals))
+        decimals = registry.get_decimals(token.value)
+        amount_int = int(amount * Decimal(10 ** decimals))
 
-        # Get wallet address
-        address = await self._get_wallet_address()
+        # Get user address if not provided
+        if user_address is None:
+            user_address = await self._get_wallet_address()
+
+        user_hash = self._address_to_script_hash(user_address)
+
+        sb = ScriptBuilder()
+
+        # Transfer token to pool (stake)
+        # The pool contract handles staking on receiving transfer
+        # data parameter indicates staking operation
+        sb.emit_push(b"stake")  # data parameter indicates staking
+        sb.emit_push(amount_int)
+        sb.emit_push(types.UInt160.from_string(pool_hash[2:]).to_array())
+        sb.emit_push(types.UInt160.from_string(user_hash[2:]).to_array())
+        sb.emit_contract_call(
+            types.UInt160.from_string(token_hash[2:]),
+            "transfer"
+        )
+        sb.emit(opcode.OpCode.ASSERT)
 
         logger.info(
-            f"Building stake script: pool={pool_hash}, "
-            f"token={token_hash}, amount={amount_units}"
+            f"Built stake script: pool={pool_hash}, "
+            f"token={token_hash}, amount={amount_int}, user={user_address}"
         )
 
-        # For hackathon demo, return a placeholder script
-        script = b'\x00' * 80  # Placeholder script
-
-        return script
-
-    async def _sign_transaction(
-        self,
-        script: bytes,
-        engine: NeoExecutionEngine
-    ) -> str:
-        """Sign transaction and return base64-encoded signed transaction"""
-        # Placeholder - same pattern as swap builder
-        signed_tx = base64.b64encode(script).decode('ascii')
-        return signed_tx
+        return sb.to_array()
 
 
 # ============================================================================
@@ -707,19 +1002,18 @@ class TransferTransactionBuilder(BaseTransactionBuilder):
 
         # Live mode: build and execute real transaction
         try:
+            from_address = await self._get_wallet_address()
+
             script = await self._build_transfer_script(
                 action.token,
                 transfer_amount,
                 action.to_address
             )
 
-            # Sign and execute transaction
-            engine = await self._get_execution_engine()
-            signed_tx = await self._sign_transaction(script, engine)
-
-            result = await engine.execute_transaction(
-                signed_tx,
-                wait_for_confirmation=True
+            result = await self._execute_transaction(
+                script,
+                from_address,
+                wait_confirmation=True
             )
 
             logger.info(f"Transfer transaction executed successfully: {result.txid}")
@@ -773,7 +1067,10 @@ class TransferTransactionBuilder(BaseTransactionBuilder):
         """
         Build Neo N3 VM script for NEP-17 transfer.
 
-        This creates a script that calls the 'transfer' method of the token contract.
+        NEP-17 transfer call:
+        - Contract: Token contract hash
+        - Method: "transfer"
+        - Args: [from (Hash160), to (Hash160), amount (Integer), data (Any)]
 
         Args:
             token: Token to transfer
@@ -786,40 +1083,59 @@ class TransferTransactionBuilder(BaseTransactionBuilder):
         if not NEO3_AVAILABLE:
             raise TransactionError("neo3 library not available for script building")
 
-        # Get contract hash
-        token_hash = ContractHashes.get_token_hash(token)
+        if ScriptBuilder is None or opcode is None:
+            raise TransactionError("neo3 ScriptBuilder or opcode not available")
 
-        # Convert amount to contract units
-        decimals = ContractHashes.get_token_decimals(token)
-        amount_units = int(amount * (Decimal(10) ** decimals))
+        from app.services.contract_registry import get_contract_registry
+
+        registry = get_contract_registry()
+
+        # Get contract hash and decimals
+        token_hash = registry.get_token_hash(token.value)
+        decimals = registry.get_decimals(token.value)
+
+        # Convert amount to integer (handle decimals)
+        amount_int = int(amount * Decimal(10 ** decimals))
 
         # Get sender address
         from_address = await self._get_wallet_address()
 
+        # Convert addresses to script hashes
+        from_hash = types.UInt160.from_string(
+            self._address_to_script_hash(from_address)[2:]  # Remove 0x prefix
+        )
+        to_hash = types.UInt160.from_string(
+            self._address_to_script_hash(to_address)[2:]  # Remove 0x prefix
+        )
+        contract_hash = types.UInt160.from_string(token_hash[2:])  # Remove 0x prefix
+
         logger.info(
-            f"Building transfer script: token={token_hash}, "
-            f"from={from_address}, to={to_address}, amount={amount_units}"
+            f"Building NEP-17 transfer script:\n"
+            f"  Token: {token.value} ({token_hash})\n"
+            f"  From: {from_address} (hash: {from_hash})\n"
+            f"  To: {to_address} (hash: {to_hash})\n"
+            f"  Amount: {amount} ({amount_int} units with {decimals} decimals)"
         )
 
-        # For hackathon demo, return a placeholder script
-        # In production, this would build a proper NEP-17 transfer script:
-        # - Convert addresses to script hashes
-        # - Call token.transfer(from, to, amount, data)
-        # - Add necessary witnesses
+        # Build script
+        sb = ScriptBuilder()
 
-        script = b'\x00' * 90  # Placeholder script
+        # Push arguments in reverse order (stack-based)
+        sb.emit_push(None)                      # data parameter (null)
+        sb.emit_push(amount_int)                # amount
+        sb.emit_push(to_hash.to_array())        # to address
+        sb.emit_push(from_hash.to_array())      # from address
 
-        return script
+        # Call contract method
+        sb.emit_contract_call(contract_hash, "transfer")
 
-    async def _sign_transaction(
-        self,
-        script: bytes,
-        engine: NeoExecutionEngine
-    ) -> str:
-        """Sign transaction and return base64-encoded signed transaction"""
-        # Placeholder - same pattern as other builders
-        signed_tx = base64.b64encode(script).decode('ascii')
-        return signed_tx
+        # Assert result is true
+        sb.emit(opcode.OpCode.ASSERT)
+
+        script_bytes = sb.to_array()
+        logger.info(f"Generated NEP-17 transfer script: {len(script_bytes)} bytes")
+
+        return script_bytes
 
 
 # ============================================================================

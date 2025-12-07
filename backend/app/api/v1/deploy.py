@@ -178,37 +178,60 @@ async def deploy_workflow(
         # Step 2: Verify payment (or check demo mode)
         # ====================================================================
 
-        if not settings.spica_demo_mode:
-            # Production mode - require payment
-            payment_service = get_payment_service()
-            workflow_spec = stored_workflow.assembled_graph.workflow_spec
+        # Get payment service and workflow spec for pricing
+        payment_service = get_payment_service()
+        workflow_spec = stored_workflow.assembled_graph.workflow_spec
 
-            # Calculate required amount for this workflow
-            required_amount = payment_service.calculate_price(workflow_spec)
+        # Handle legacy workflows that don't have workflow_spec
+        if workflow_spec is None:
+            # Create a minimal workflow spec from state_graph_config for pricing
+            from app.models.workflow_models import WorkflowSpec, TriggerSpec
+            state_config = stored_workflow.assembled_graph.state_graph_config
+            trigger_data = state_config.get("trigger", {})
+            steps_data = state_config.get("steps", [])
 
-            # Check if payment header is present
-            if not payment_header or payment_header == "":
-                logger.info(f"No payment header provided for workflow {workflow_id}")
+            workflow_spec = WorkflowSpec(
+                intent=stored_workflow.assembled_graph.workflow_description,
+                name=stored_workflow.assembled_graph.workflow_name,
+                trigger=TriggerSpec(
+                    type=trigger_data.get("type", "time"),
+                    **trigger_data.get("params", {})
+                ),
+                steps=[{"type": s.get("action_type", "unknown"), **s.get("params", {})} for s in steps_data]
+            )
 
-                # Generate payment request
-                payment_request = await payment_service.generate_x402_payment_request(
-                    workflow=workflow_spec,
-                    workflow_id=workflow_id
-                )
+        # Calculate required amount for this workflow
+        required_amount = payment_service.calculate_price(workflow_spec)
 
-                # Wrap payment request in x402 format
-                x402_request = {
-                    "x402Version": 1,
-                    "accepts": [payment_request]
-                }
+        # ALWAYS return 402 on first call (no payment header) - even in demo mode
+        # This allows the frontend to show the payment UI for demonstration purposes
+        if not payment_header or payment_header == "":
+            logger.info(f"No payment header provided for workflow {workflow_id} (demo_mode={settings.spica_demo_mode})")
 
-                # Return 402 with X-PAYMENT-REQUEST header
-                return create_402_response(
-                    payment_request=x402_request,
-                    detail="Payment required to deploy workflow"
-                )
+            # Generate payment request
+            payment_request = await payment_service.generate_x402_payment_request(
+                workflow=workflow_spec,
+                workflow_id=workflow_id
+            )
 
-            # Verify payment with full context (amount and workflow_id)
+            # Wrap payment request in x402 format
+            x402_request = {
+                "x402Version": 1,
+                "accepts": [payment_request]
+            }
+
+            # Return 402 with X-PAYMENT-REQUEST header
+            return create_402_response(
+                payment_request=x402_request,
+                detail="Payment required to deploy workflow"
+            )
+
+        # Payment header is present - verify or bypass based on demo mode
+        if settings.spica_demo_mode:
+            # Demo mode - accept any payment header (bypass verification)
+            logger.info(f"Demo mode - bypassing payment verification for workflow {workflow_id}")
+        else:
+            # Production mode - verify payment
             payment_verification = await payment_service.verify_payment(
                 payment_header=payment_header,
                 required_amount=required_amount,
@@ -258,9 +281,6 @@ async def deploy_workflow(
 
             # Payment is valid - log payer
             logger.info(f"Payment verified for workflow {workflow_id} from {payment_verification.payer}")
-        else:
-            # Demo mode - bypass payment
-            logger.info(f"Demo mode - bypassing payment for workflow {workflow_id}")
 
         # ====================================================================
         # Step 3: Activate workflow

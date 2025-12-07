@@ -25,14 +25,23 @@ class Settings(BaseSettings):
     )
 
     # Neo N3 Configuration
+    neo_network: str = "testnet"  # Network selection: "mainnet" or "testnet"
     neo_testnet_rpc: str = "https://testnet1.neo.coz.io:443"
     neo_testnet_rpc_fallback: str = "https://testnet2.neo.coz.io:443"
+    neo_mainnet_rpc: str = "https://mainnet1.neo.coz.io:443"
     neo_rpc_timeout: int = 60
     demo_wallet_wif: str = Field(
         ...,
         min_length=1,
         description="Neo N3 wallet WIF (required for demo transactions)"
     )
+
+    @property
+    def neo_rpc_url(self) -> str:
+        """Get the Neo RPC URL based on configured network."""
+        if self.neo_network == "mainnet":
+            return self.neo_mainnet_rpc
+        return self.neo_testnet_rpc
 
     # x402 Payment Configuration
     x402_facilitator_url: Optional[str] = None

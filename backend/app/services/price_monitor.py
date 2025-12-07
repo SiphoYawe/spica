@@ -143,8 +143,8 @@ class PriceMonitorService:
     # Default polling interval (seconds)
     DEFAULT_POLL_INTERVAL = 30
 
-    # Price cache TTL (seconds)
-    CACHE_TTL = 10
+    # Price cache TTL (seconds) - Task 2.1: Changed to 60 seconds
+    CACHE_TTL = 60
 
     def __init__(
         self,
@@ -331,15 +331,99 @@ class PriceMonitorService:
 
     async def _get_flamingo_price(self, token: TokenType) -> PriceData:
         """
-        Fetch price from Flamingo DEX.
+        Fetch price from Flamingo DEX pool reserves.
 
-        Note: This is a placeholder - Flamingo API integration
-        would need to be implemented based on their actual API.
+        Task 2.2: Real Flamingo DEX Price Feed Implementation
+
+        Calculates price based on pool reserve ratios by querying
+        the Flamingo swap router's getAmountsOut function.
+
+        Process:
+        1. Query router for how much GAS you'd get for 1 token
+        2. Get GAS price in USD from CoinGecko
+        3. Calculate token price: (GAS amount) * (GAS USD price)
+
+        Falls back to CoinGecko on error.
         """
-        # Flamingo DEX API is not publicly documented
-        # For now, fall back to mock prices
-        logger.warning("Flamingo price feed not implemented, using mock prices")
-        return await self._get_mock_price(token)
+        from app.services.neo_rpc import get_neo_rpc
+        from app.services.contract_registry import get_contract_registry
+
+        registry = get_contract_registry()
+
+        try:
+            rpc = await get_neo_rpc()
+
+            # Get contract hashes
+            token_hash = registry.get_token_hash(token.value)
+            gas_hash = registry.get_native_hash("GAS")
+            router_hash = registry.get_flamingo_hash("SWAP_ROUTER")
+
+            # Prepare amount: 1 token in smallest units
+            decimals = registry.get_decimals(token.value)
+            one_token = 10 ** decimals  # 1 token in smallest units
+
+            # Query Flamingo Router: getAmountsOut(amountIn, path)
+            # Returns array of amounts for each token in path
+            # path = [token_in, token_out] = [our_token, GAS]
+            result = await rpc.invoke_function(
+                router_hash,
+                "getAmountsOut",
+                [
+                    {"type": "Integer", "value": str(one_token)},
+                    {"type": "Array", "value": [
+                        {"type": "Hash160", "value": token_hash},
+                        {"type": "Hash160", "value": gas_hash}
+                    ]}
+                ]
+            )
+
+            # Check if invocation succeeded
+            if result.get("state") != "HALT":
+                logger.warning(f"Flamingo getAmountsOut failed: {result.get('exception')}")
+                logger.info("Falling back to CoinGecko for price data")
+                return await self._get_coingecko_price(token)
+
+            # Parse output - get GAS amount from stack
+            stack = result.get("stack", [])
+            if stack and len(stack) > 0:
+                # getAmountsOut returns an array of amounts
+                # stack[0] is the array, we want the last element (output amount)
+                amounts_array = stack[0].get("value", [])
+                if amounts_array and len(amounts_array) > 1:
+                    # Last element is the GAS output amount
+                    gas_output = amounts_array[-1]
+                    gas_amount_raw = int(gas_output.get("value", 0))
+
+                    # Convert from smallest units to GAS (8 decimals)
+                    gas_amount = Decimal(str(gas_amount_raw)) / Decimal(10 ** 8)
+
+                    # Get GAS price in USD from CoinGecko as reference
+                    gas_price_data = await self._get_coingecko_price(TokenType.GAS)
+
+                    # Calculate token price: (GAS amount) * (GAS USD price)
+                    token_price_usd = gas_amount * gas_price_data.price_usd
+
+                    logger.info(
+                        f"Flamingo price for {token.value}: "
+                        f"{gas_amount} GAS * ${gas_price_data.price_usd} = ${token_price_usd}"
+                    )
+
+                    return PriceData(
+                        token=token,
+                        price_usd=token_price_usd.quantize(Decimal("0.01")),
+                        timestamp=datetime.now(UTC),
+                        source="flamingo",
+                        change_24h=None  # DEX doesn't provide 24h change
+                    )
+
+            # If we couldn't parse the result, fall back
+            logger.warning("Could not parse Flamingo getAmountsOut response")
+            return await self._get_coingecko_price(token)
+
+        except Exception as e:
+            logger.error(f"Flamingo price fetch error for {token.value}: {e}")
+            logger.info("Falling back to CoinGecko for price data")
+            return await self._get_coingecko_price(token)  # Fallback
 
     # ========================================================================
     # Condition Evaluation
@@ -505,7 +589,8 @@ async def get_price_monitor() -> PriceMonitorService:
 
     async with _price_monitor_lock:
         if _price_monitor is None:
-            _price_monitor = PriceMonitorService()
+            # Task 2.1: Use CoinGecko by default when not in demo mode
+            _price_monitor = PriceMonitorService(source=PriceSource.COINGECKO)
         return _price_monitor
 
 

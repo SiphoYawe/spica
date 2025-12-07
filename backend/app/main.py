@@ -22,12 +22,89 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan events"""
-    logger.info("Starting Spica backend...")
-    # TODO: Initialize SpoonOS agents, schedulers, etc.
+    """Application lifespan manager - handles startup and shutdown"""
+    # ========================================================================
+    # STARTUP
+    # ========================================================================
+    logger.info("Starting Spica API...")
+
+    # Initialize Neo RPC
+    try:
+        from app.services.neo_rpc import get_neo_rpc
+        rpc = await get_neo_rpc()
+        block_count = await rpc.get_block_count()
+        logger.info(f"✓ Neo RPC connected, block height: {block_count}")
+    except Exception as e:
+        logger.warning(f"✗ Neo RPC initialization failed: {e}")
+
+    # Initialize price monitor
+    try:
+        from app.services.price_monitor import get_price_monitor
+        monitor = await get_price_monitor()
+        logger.info(f"✓ Price monitor initialized, source: {monitor.source.value}")
+    except Exception as e:
+        logger.warning(f"✗ Price monitor initialization failed: {e}")
+
+    # Initialize workflow scheduler
+    try:
+        from app.services.workflow_scheduler import get_workflow_scheduler
+        scheduler = await get_workflow_scheduler()
+        await scheduler.start()
+        logger.info("✓ Workflow scheduler started")
+    except Exception as e:
+        logger.warning(f"✗ Scheduler initialization failed: {e}")
+
+    # Initialize execution storage
+    try:
+        from app.services.execution_storage import get_execution_storage
+        storage = await get_execution_storage()
+        logger.info("✓ Execution storage initialized")
+    except Exception as e:
+        logger.warning(f"✗ Execution storage initialization failed: {e}")
+
+    logger.info("✓ Spica API startup complete")
+
     yield
-    logger.info("Shutting down Spica backend...")
-    # TODO: Cleanup resources
+
+    # ========================================================================
+    # SHUTDOWN
+    # ========================================================================
+    logger.info("Shutting down Spica API...")
+
+    # Stop workflow scheduler
+    try:
+        from app.services.workflow_scheduler import get_workflow_scheduler
+        scheduler = await get_workflow_scheduler()
+        await scheduler.stop()
+        logger.info("✓ Workflow scheduler stopped")
+    except Exception as e:
+        logger.error(f"✗ Error stopping scheduler: {e}")
+
+    # Close price monitor
+    try:
+        from app.services.price_monitor import close_price_monitor
+        await close_price_monitor()
+        logger.info("✓ Price monitor closed")
+    except Exception as e:
+        logger.error(f"✗ Error closing price monitor: {e}")
+
+    # Close Neo RPC
+    try:
+        from app.services.neo_rpc import close_neo_rpc
+        await close_neo_rpc()
+        logger.info("✓ Neo RPC closed")
+    except Exception as e:
+        logger.error(f"✗ Error closing Neo RPC: {e}")
+
+    # Close execution storage
+    try:
+        from app.services.execution_storage import close_execution_storage
+        await close_execution_storage()
+        logger.info("✓ Execution storage closed")
+    except Exception as e:
+        logger.error(f"✗ Error closing execution storage: {e}")
+
+    logger.info("✓ Spica API shutdown complete")
 
 
 app = FastAPI(
