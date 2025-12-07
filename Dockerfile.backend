@@ -15,6 +15,9 @@ RUN apt-get update && apt-get install -y \
 COPY spoon-core/ /app/spoon-core/
 COPY spoon-toolkit/ /app/spoon-toolkit/
 
+# Install SpoonOS core requirements first
+RUN pip install --no-cache-dir -r /app/spoon-core/requirements.txt
+
 # Copy backend requirements and install
 COPY backend/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
