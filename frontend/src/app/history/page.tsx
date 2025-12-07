@@ -46,6 +46,7 @@ import {
   Copy,
   AlertCircle,
   Search,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/api/client";
@@ -74,7 +75,7 @@ interface ExecutionRecord {
   workflow_name: string;
   triggered_at: string;
   executed_at?: string;
-  status: "pending" | "running" | "success" | "failed";
+  status: "pending" | "running" | "success" | "failed" | "completed";
   trigger_type: string;
   action_summary: string;
   transaction_hash?: string;
@@ -82,49 +83,6 @@ interface ExecutionRecord {
   error?: string;
   duration_ms?: number;
 }
-
-// For now, we'll generate deterministic mock data since the backend endpoint doesn't exist yet
-// This will be replaced with real API call: GET /api/v1/executions
-// TODO: Backend Task 1 - Implement GET /api/v1/executions endpoint with filters
-const generateMockExecutions = (workflows: WorkflowSummary[]): ExecutionRecord[] => {
-  if (workflows.length === 0) return [];
-
-  // Deterministic mock data based on workflow index
-  const executions: ExecutionRecord[] = [];
-
-  workflows.forEach((workflow, wIndex) => {
-    // Generate 2-3 executions per workflow based on index
-    const count = (wIndex % 2) + 2;
-    for (let i = 0; i < count; i++) {
-      // Deterministic time offset based on indices
-      const hoursAgo = (wIndex * 10) + (i * 5) + 1;
-      const triggeredAt = new Date(Date.now() - hoursAgo * MS_PER_HOUR);
-      // Deterministic status: mostly success, some failures
-      const status: ExecutionRecord["status"] = (wIndex + i) % 5 === 0 ? "failed" : "success";
-      const duration = 2000 + (i * 1000) + (wIndex * 500);
-
-      executions.push({
-        id: `exec-${workflow.workflow_id}-${i}`,
-        workflow_id: workflow.workflow_id,
-        workflow_name: workflow.workflow_name,
-        triggered_at: triggeredAt.toISOString(),
-        executed_at: new Date(triggeredAt.getTime() + duration).toISOString(),
-        status,
-        trigger_type: "price",
-        action_summary: "Swap GAS → NEO",
-        transaction_hash: status === "success"
-          ? `0x${workflow.workflow_id.replace(/-/g, "").slice(0, 32)}${i.toString().padStart(8, "0")}`
-          : undefined,
-        duration_ms: duration,
-        error: status === "failed" ? "Insufficient balance for swap" : undefined,
-      });
-    }
-  });
-
-  return executions.sort(
-    (a, b) => new Date(b.triggered_at).getTime() - new Date(a.triggered_at).getTime()
-  );
-};
 
 export default function HistoryPage() {
   useAppInitialization();
@@ -135,7 +93,7 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Filter state
-  const [workflowFilter, setWorkflowFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -146,28 +104,66 @@ export default function HistoryPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch workflows for the filter dropdown
+      // Fetch workflows for reference
       const workflowResult = await apiClient.listWorkflows();
       if (workflowResult.success && workflowResult.data) {
-        const workflowSummaries = workflowResult.data.workflows.map((w) => ({
-          workflow_id: w.workflow_id,
-          workflow_name: w.workflow_name,
-        }));
-        setWorkflows(workflowSummaries);
-
-        // Generate mock executions based on actual workflows
-        // TODO: Replace with real API call: GET /api/v1/executions
-        const mockExecs = generateMockExecutions(workflowSummaries);
-        setExecutions(mockExecs);
-      } else {
-        setError(workflowResult.error?.message || "Failed to load data");
+        // Check for backend success and workflows array
+        if (workflowResult.data.success !== false && Array.isArray(workflowResult.data.workflows)) {
+          const workflowSummaries = workflowResult.data.workflows.map((w) => ({
+            workflow_id: w.workflow_id,
+            workflow_name: w.workflow_name,
+          }));
+          setWorkflows(workflowSummaries);
+        }
       }
-    } catch {
+
+      // Fetch real executions from API
+      const executionsResult = await apiClient.listExecutions({
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        limit: 100,
+      });
+
+      if (executionsResult.success && executionsResult.data &&
+          Array.isArray(executionsResult.data.executions)) {
+        const mappedExecutions: ExecutionRecord[] = executionsResult.data.executions.map(e => {
+          // Calculate duration if both timestamps exist
+          let duration_ms: number | undefined;
+          if (e.started_at && e.completed_at) {
+            duration_ms = new Date(e.completed_at).getTime() - new Date(e.started_at).getTime();
+          }
+
+          // Map API status to UI status
+          let status: ExecutionRecord["status"] = "pending";
+          if (e.status === "completed") status = "success";
+          else if (e.status === "failed") status = "failed";
+          else if (e.status === "running") status = "running";
+
+          return {
+            id: e.execution_id,
+            workflow_id: e.workflow_id,
+            workflow_name: e.workflow_name,
+            triggered_at: e.started_at,
+            executed_at: e.completed_at || undefined,
+            status,
+            trigger_type: e.trigger_type,
+            action_summary: e.action_summary,
+            transaction_hash: e.tx_hash || undefined,
+            error: e.error || undefined,
+            duration_ms,
+          };
+        });
+        setExecutions(mappedExecutions);
+      } else if (!executionsResult.success) {
+        // If API returns empty or error, show empty state (not error)
+        setExecutions([]);
+      }
+    } catch (err) {
+      console.error("Failed to load execution history:", err);
       setError("Failed to load execution history");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchData();
@@ -175,8 +171,26 @@ export default function HistoryPage() {
 
   // Filter executions
   const filteredExecutions = useMemo(() => {
+    const now = new Date();
     return executions.filter((exec) => {
-      if (workflowFilter !== "all" && exec.workflow_id !== workflowFilter) return false;
+      // Date filter
+      if (dateFilter !== "all") {
+        const execDate = new Date(exec.triggered_at);
+        const diffMs = now.getTime() - execDate.getTime();
+
+        switch (dateFilter) {
+          case "today":
+            if (diffMs > MS_PER_DAY) return false;
+            break;
+          case "week":
+            if (diffMs > MS_PER_DAY * 7) return false;
+            break;
+          case "month":
+            if (diffMs > MS_PER_DAY * 30) return false;
+            break;
+        }
+      }
+
       if (statusFilter !== "all" && exec.status !== statusFilter) return false;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -190,7 +204,7 @@ export default function HistoryPage() {
       }
       return true;
     });
-  }, [executions, workflowFilter, statusFilter, searchQuery]);
+  }, [executions, dateFilter, statusFilter, searchQuery]);
 
   const toggleRowExpanded = (id: string) => {
     setExpandedRows((prev) => {
@@ -210,12 +224,12 @@ export default function HistoryPage() {
   };
 
   const clearFilters = () => {
-    setWorkflowFilter("all");
+    setDateFilter("all");
     setStatusFilter("all");
     setSearchQuery("");
   };
 
-  const hasActiveFilters = workflowFilter !== "all" || statusFilter !== "all" || searchQuery !== "";
+  const hasActiveFilters = dateFilter !== "all" || statusFilter !== "all" || searchQuery !== "";
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -249,6 +263,7 @@ export default function HistoryPage() {
   const getStatusIcon = (status: ExecutionRecord["status"]) => {
     switch (status) {
       case "success":
+      case "completed":
         return <CheckCircle2 className="h-4 w-4 text-spica" />;
       case "failed":
         return <XCircle className="h-4 w-4 text-destructive" />;
@@ -262,6 +277,7 @@ export default function HistoryPage() {
   const getStatusBadge = (status: ExecutionRecord["status"]) => {
     const variants: Record<ExecutionRecord["status"], string> = {
       success: "border-spica/50 text-spica bg-spica/10",
+      completed: "border-spica/50 text-spica bg-spica/10",
       failed: "border-destructive/50 text-destructive bg-destructive/10",
       running: "border-blue-500/50 text-blue-500 bg-blue-500/10",
       pending: "border-amber-500/50 text-amber-500 bg-amber-500/10",
@@ -273,31 +289,31 @@ export default function HistoryPage() {
     );
   };
 
-  // Loading skeleton
+  // Loading skeleton - zinc color palette for consistency
   if (isLoading) {
     return (
-      <AppLayout sidebar={<Sidebar />} header={<CanvasHeader />}>
+      <AppLayout sidebar={<Sidebar />} header={<CanvasHeader />} canvasVariant="subtle">
         <div className="h-full w-full overflow-auto p-6">
           <div className="flex items-center justify-between mb-6">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-48 bg-zinc-800/80" />
+            <Skeleton className="h-8 w-24 bg-zinc-800/80" />
           </div>
           <div className="flex gap-4 mb-6">
-            <Skeleton className="h-10 w-48" />
-            <Skeleton className="h-10 w-32" />
-            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-48 bg-zinc-800/60" />
+            <Skeleton className="h-10 w-32 bg-zinc-800/60" />
+            <Skeleton className="h-10 w-32 bg-zinc-800/60" />
           </div>
-          <Card>
+          <Card className="bg-[#0a0a0c] border-zinc-800/80">
             <CardContent className="p-0">
               <div className="space-y-0">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 p-4 border-b border-border/50">
-                    <Skeleton className="h-4 w-4" />
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-6 w-20" />
-                    <Skeleton className="h-4 w-32" />
+                  <div key={i} className="flex items-center gap-4 p-4 border-b border-zinc-800/50">
+                    <Skeleton className="h-4 w-4 bg-zinc-800/60" />
+                    <Skeleton className="h-4 w-32 bg-zinc-800/60" />
+                    <Skeleton className="h-4 w-40 bg-zinc-800/60" />
+                    <Skeleton className="h-4 w-24 bg-zinc-800/60" />
+                    <Skeleton className="h-6 w-20 bg-zinc-800/80" />
+                    <Skeleton className="h-4 w-32 bg-zinc-800/60" />
                   </div>
                 ))}
               </div>
@@ -311,7 +327,7 @@ export default function HistoryPage() {
   // Error state
   if (error) {
     return (
-      <AppLayout sidebar={<Sidebar />} header={<CanvasHeader />}>
+      <AppLayout sidebar={<Sidebar />} header={<CanvasHeader />} canvasVariant="subtle">
         <div className="flex h-full w-full items-center justify-center p-8">
           <div className="flex flex-col items-center gap-6 text-center max-w-md">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
@@ -329,7 +345,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <AppLayout sidebar={<Sidebar />} header={<CanvasHeader />}>
+    <AppLayout sidebar={<Sidebar />} header={<CanvasHeader />} canvasVariant="subtle">
       <TooltipProvider delayDuration={0}>
         <div className="h-full w-full overflow-auto p-6">
           {/* Page Header */}
@@ -378,18 +394,16 @@ export default function HistoryPage() {
                   />
                 </div>
 
-                {/* Workflow filter */}
-                <Select value={workflowFilter} onValueChange={setWorkflowFilter}>
-                  <SelectTrigger className="w-[180px] bg-background/50">
-                    <SelectValue placeholder="All Workflows" />
+                {/* Date filter */}
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-[140px] bg-background/50">
+                    <SelectValue placeholder="All Time" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Workflows</SelectItem>
-                    {workflows.map((w) => (
-                      <SelectItem key={w.workflow_id} value={w.workflow_id}>
-                        {w.workflow_name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">Last 7 Days</SelectItem>
+                    <SelectItem value="month">Last 30 Days</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -460,17 +474,17 @@ export default function HistoryPage() {
               </div>
             </div>
           ) : (
-            <Card className="bg-card/50 backdrop-blur-sm overflow-hidden">
-              <Table>
+            <Card className="bg-card/50 backdrop-blur-sm">
+              <Table className="w-full">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-border/50">
-                    <TableHead className="w-[40px]"></TableHead>
-                    <TableHead className="w-[140px]">Timestamp</TableHead>
-                    <TableHead className="w-[200px]">Workflow</TableHead>
-                    <TableHead className="w-[150px]">Action</TableHead>
-                    <TableHead className="w-[100px]">Status</TableHead>
-                    <TableHead className="w-[180px]">Transaction</TableHead>
-                    <TableHead className="w-[80px] text-right">Duration</TableHead>
+                    <TableHead className="w-10 shrink-0"></TableHead>
+                    <TableHead className="w-24 shrink-0">Timestamp</TableHead>
+                    <TableHead className="min-w-[140px]">Workflow</TableHead>
+                    <TableHead className="hidden md:table-cell">Action</TableHead>
+                    <TableHead className="w-24 shrink-0">Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Transaction</TableHead>
+                    <TableHead className="w-16 shrink-0 text-right">Duration</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -502,10 +516,10 @@ export default function HistoryPage() {
                               )}
                             </Button>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-3">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-sm text-muted-foreground whitespace-nowrap">
                                   {formatRelativeTime(execution.triggered_at)}
                                 </span>
                               </TooltipTrigger>
@@ -514,33 +528,33 @@ export default function HistoryPage() {
                               </TooltipContent>
                             </Tooltip>
                           </TableCell>
-                          <TableCell onClick={(e) => e.stopPropagation()}>
+                          <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
                             <Link
                               href={`/workflows/${execution.workflow_id}`}
-                              className="text-sm font-medium hover:text-spica transition-colors"
+                              className="text-sm font-medium hover:text-spica transition-colors line-clamp-1"
                             >
                               {execution.workflow_name}
                             </Link>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell py-3">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Badge variant="outline" className="text-[10px] font-mono">
+                              <Badge variant="outline" className="text-[10px] font-mono shrink-0">
                                 {execution.trigger_type}
                               </Badge>
-                              <span className="truncate">{execution.action_summary}</span>
+                              <span className="truncate max-w-[150px]">{execution.action_summary}</span>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
+                          <TableCell className="py-3">
+                            <div className="flex items-center gap-1.5">
                               {getStatusIcon(execution.status)}
                               {getStatusBadge(execution.status)}
                             </div>
                           </TableCell>
-                          <TableCell onClick={(e) => e.stopPropagation()}>
+                          <TableCell className="hidden lg:table-cell py-3" onClick={(e) => e.stopPropagation()}>
                             {execution.transaction_hash ? (
                               <div className="flex items-center gap-1">
-                                <code className="text-xs font-mono text-muted-foreground truncate max-w-[100px]">
-                                  {execution.transaction_hash.slice(0, 10)}...
+                                <code className="text-xs font-mono text-muted-foreground truncate max-w-[80px]">
+                                  {execution.transaction_hash.slice(0, 8)}...
                                 </code>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -573,8 +587,8 @@ export default function HistoryPage() {
                               <span className="text-xs text-muted-foreground/50">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <span className="text-xs font-mono text-muted-foreground">
+                          <TableCell className="text-right py-3">
+                            <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
                               {formatDuration(execution.duration_ms)}
                             </span>
                           </TableCell>
@@ -582,7 +596,7 @@ export default function HistoryPage() {
                         {isExpanded && (
                           <TableRow className="bg-muted/20 hover:bg-muted/20 border-border/50">
                             <TableCell colSpan={7} className="p-4">
-                              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                              <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                                 <div>
                                   <span className="text-xs text-muted-foreground">Triggered At</span>
                                   <p className="text-sm font-mono">
@@ -611,8 +625,18 @@ export default function HistoryPage() {
                                   </span>
                                   <p className="text-sm font-mono truncate">{execution.id}</p>
                                 </div>
+                                {/* Action details - always visible in expanded view */}
+                                <div className="col-span-2">
+                                  <span className="text-xs text-muted-foreground">Action</span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="text-[10px] font-mono">
+                                      {execution.trigger_type}
+                                    </Badge>
+                                    <span className="text-sm">{execution.action_summary}</span>
+                                  </div>
+                                </div>
                                 {execution.error && (
-                                  <div className="md:col-span-2 lg:col-span-4">
+                                  <div className="col-span-2 lg:col-span-4">
                                     <span className="text-xs text-destructive">Error</span>
                                     <p className="text-sm text-destructive bg-destructive/10 p-2 rounded mt-1">
                                       {execution.error}
@@ -620,31 +644,33 @@ export default function HistoryPage() {
                                   </div>
                                 )}
                                 {execution.transaction_hash && (
-                                  <div className="md:col-span-2 lg:col-span-4">
+                                  <div className="col-span-2 lg:col-span-4">
                                     <span className="text-xs text-muted-foreground">
                                       Transaction Hash
                                     </span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <code className="text-sm font-mono bg-muted/30 px-2 py-1 rounded flex-1 truncate">
+                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                      <code className="text-sm font-mono bg-muted/30 px-2 py-1 rounded truncate max-w-full">
                                         {execution.transaction_hash}
                                       </code>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => copyToClipboard(execution.transaction_hash!)}
-                                      >
-                                        <Copy className="h-4 w-4" />
-                                      </Button>
-                                      <a
-                                        href={`${NEO_EXPLORER_URL}/${execution.transaction_hash}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        <Button variant="outline" size="sm" className="gap-1">
-                                          <ExternalLink className="h-4 w-4" />
-                                          Explorer
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => copyToClipboard(execution.transaction_hash!)}
+                                        >
+                                          <Copy className="h-4 w-4" />
                                         </Button>
-                                      </a>
+                                        <a
+                                          href={`${NEO_EXPLORER_URL}/${execution.transaction_hash}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        >
+                                          <Button variant="outline" size="sm" className="gap-1">
+                                            <ExternalLink className="h-4 w-4" />
+                                            Explorer
+                                          </Button>
+                                        </a>
+                                      </div>
                                     </div>
                                   </div>
                                 )}

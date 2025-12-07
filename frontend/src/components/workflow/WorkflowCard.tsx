@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,9 +24,11 @@ import {
   Trash2,
   Clock,
   Activity,
-  ExternalLink,
+  ArrowUpRight,
   Loader2,
   AlertTriangle,
+  Zap,
+  Calendar,
 } from "lucide-react";
 import { apiClient } from "@/api/client";
 import { toast } from "sonner";
@@ -138,165 +138,196 @@ export function WorkflowCard({ workflow, onUpdate }: WorkflowCardProps) {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <Card
+      <div
         className={cn(
-          "group relative overflow-hidden transition-all duration-200 hover:border-spica/30",
-          "bg-card/50 backdrop-blur-sm",
-          isActive && "border-spica/20"
+          "group relative overflow-hidden rounded-xl transition-all duration-300",
+          // Dark black background with no gradient
+          "bg-[#0a0a0c]",
+          // Subtle light grey border for all states
+          "border border-zinc-700/60 hover:border-zinc-600/80",
+          // Subtle shadow on hover
+          "hover:shadow-lg",
+          isActive && "hover:shadow-spica/5"
         )}
       >
-        {/* Status indicator line */}
-        <div
-          className={cn(
-            "absolute left-0 top-0 h-full w-1 transition-colors",
-            isActive ? "bg-spica" : "bg-amber-500"
-          )}
-        />
+        {/* Subtle corner glow on hover - only for active */}
+        {isActive && (
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-spica/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        )}
 
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
+        {/* Content */}
+        <div className="relative p-4 sm:p-5">
+          {/* Header - Stack on mobile, row on larger */}
+          <div className="flex flex-col gap-3 mb-4">
+            {/* Title row with badge */}
+            <div className="flex items-start justify-between gap-3">
               <Link
                 href={`/workflows/${workflow.workflow_id}`}
-                className="group/link flex items-center gap-2"
+                className="group/link flex-1 min-w-0"
               >
-                <h3 className="font-medium text-sm truncate group-hover/link:text-spica transition-colors">
+                <h3 className="font-semibold text-base text-white group-hover/link:text-spica transition-colors line-clamp-2 leading-tight">
                   {workflow.workflow_name}
+                  <ArrowUpRight className="inline-block ml-1 h-3.5 w-3.5 opacity-0 group-hover/link:opacity-100 transition-all text-spica" />
                 </h3>
-                <ExternalLink className="h-3 w-3 opacity-0 group-hover/link:opacity-100 transition-opacity text-muted-foreground" />
               </Link>
-              <p className="text-xs text-muted-foreground truncate mt-1">
-                {workflow.workflow_description}
-              </p>
+
+              {/* Status Badge */}
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider shrink-0",
+                  isActive
+                    ? "bg-spica/15 text-spica border border-spica/30"
+                    : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                )}
+              >
+                <span className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  isActive ? "bg-spica animate-pulse" : "bg-amber-400"
+                )} />
+                {isActive ? "Active" : "Paused"}
+              </div>
             </div>
 
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[10px] shrink-0",
-                isActive
-                  ? "border-spica/50 text-spica"
-                  : "border-amber-500/50 text-amber-500"
-              )}
-            >
-              {isActive ? "Active" : "Paused"}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Trigger info */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-              <span className="truncate">{workflow.trigger_summary}</span>
-            </div>
-            {isActive && formatNextCheck(workflow.next_check_at) && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-spica font-medium shrink-0">
-                    Next: {formatNextCheck(workflow.next_check_at)}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>Next trigger check</TooltipContent>
-              </Tooltip>
-            )}
+            {/* Description */}
+            <p className="text-sm text-zinc-400 line-clamp-2 leading-relaxed">
+              {workflow.workflow_description}
+            </p>
           </div>
 
-          {/* Stats row */}
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-4">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Activity className="h-3.5 w-3.5" />
-                    <span>{workflow.execution_count}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>Executions</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="text-muted-foreground">
-                    Last: {formatRelativeTime(workflow.last_executed_at)}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {workflow.last_executed_at
-                    ? formatDate(workflow.last_executed_at)
-                    : "Never executed"}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-
-            <div className="text-muted-foreground/60">
-              Created {formatDate(workflow.created_at)}
+          {/* Trigger Info Card */}
+          <div className={cn(
+            "rounded-lg p-2.5 sm:p-3 mb-4",
+            "bg-zinc-900/80 border border-zinc-800/80"
+          )}>
+            <div className="flex items-center gap-2 text-sm">
+              <div className={cn(
+                "flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0",
+                isActive ? "bg-spica/10" : "bg-amber-500/10"
+              )}>
+                <Clock className={cn(
+                  "h-3.5 w-3.5 sm:h-4 sm:w-4",
+                  isActive ? "text-spica" : "text-amber-400"
+                )} />
+              </div>
+              <span className="text-zinc-300 font-medium text-xs sm:text-sm leading-tight">
+                {workflow.trigger_summary}
+              </span>
             </div>
           </div>
+
+          {/* Stats Grid - Responsive */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-5">
+            {/* Executions */}
+            <div className="flex flex-col gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-lg bg-zinc-900/60 border border-zinc-800/60">
+              <div className="flex items-center gap-1 text-zinc-500">
+                <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide">Runs</span>
+              </div>
+              <span className="text-base sm:text-lg font-bold text-white tabular-nums">
+                {workflow.execution_count}
+              </span>
+            </div>
+
+            {/* Last Run */}
+            <div className="flex flex-col gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-lg bg-zinc-900/60 border border-zinc-800/60">
+              <div className="flex items-center gap-1 text-zinc-500">
+                <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide">Last</span>
+              </div>
+              <span className="text-xs sm:text-sm font-semibold text-zinc-300 truncate">
+                {formatRelativeTime(workflow.last_executed_at)}
+              </span>
+            </div>
+
+            {/* Created */}
+            <div className="flex flex-col gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-lg bg-zinc-900/60 border border-zinc-800/60">
+              <div className="flex items-center gap-1 text-zinc-500">
+                <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide">Created</span>
+              </div>
+              <span className="text-xs sm:text-sm font-semibold text-zinc-300">
+                {formatDate(workflow.created_at)}
+              </span>
+            </div>
+          </div>
+
+          {/* Next Check (if active) */}
+          {isActive && formatNextCheck(workflow.next_check_at) && (
+            <div className="flex items-center justify-center gap-2 py-2 mb-4 rounded-lg bg-spica/10 border border-spica/20">
+              <div className="w-2 h-2 rounded-full bg-spica animate-pulse" />
+              <span className="text-xs font-medium text-spica">
+                Next check in {formatNextCheck(workflow.next_check_at)}
+              </span>
+            </div>
+          )}
 
           {/* Actions */}
-          <div className="flex items-center gap-2 pt-2 border-t border-border/50" role="group" aria-label="Workflow actions">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 flex-1 gap-2"
-                  onClick={handleToggle}
-                  disabled={isToggling}
-                  aria-label={isActive ? "Pause workflow" : "Resume workflow"}
-                >
-                  {isToggling ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                  ) : isActive ? (
-                    <Pause className="h-3.5 w-3.5" aria-hidden="true" />
-                  ) : (
-                    <Play className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
-                  {isActive ? "Pause" : "Resume"}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isActive ? "Pause workflow" : "Resume workflow"}
-              </TooltipContent>
-            </Tooltip>
+          <div className="flex items-center gap-2 pt-3 sm:pt-4 border-t border-zinc-800/80">
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "flex-1 h-9 sm:h-10 gap-1.5 sm:gap-2 font-medium transition-all text-xs sm:text-sm",
+                "bg-transparent border-zinc-700/60",
+                isActive
+                  ? "hover:bg-amber-500/10 hover:border-amber-500/50 hover:text-amber-400"
+                  : "hover:bg-spica/10 hover:border-spica/50 hover:text-spica"
+              )}
+              onClick={handleToggle}
+              disabled={isToggling}
+            >
+              {isToggling ? (
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+              ) : isActive ? (
+                <Pause className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              ) : (
+                <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              )}
+              {isActive ? "Pause" : "Resume"}
+            </Button>
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className={cn(
+                    "h-9 w-9 sm:h-10 sm:w-10 p-0",
+                    "bg-transparent border-zinc-700/60",
+                    "hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400",
+                    "transition-all"
+                  )}
                   onClick={() => setShowDeleteDialog(true)}
-                  aria-label={`Delete workflow ${workflow.workflow_name}`}
                 >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Delete workflow</TooltipContent>
             </Tooltip>
           </div>
-        </CardContent>
+        </div>
 
         {/* Delete confirmation dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
+          <DialogContent className="bg-[#0a0a0c] border-zinc-800">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
+              <DialogTitle className="flex items-center gap-3 text-white">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/10">
+                  <AlertTriangle className="h-5 w-5 text-red-400" />
+                </div>
                 Delete Workflow
               </DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete &ldquo;{workflow.workflow_name}&rdquo;? This
-                action cannot be undone.
+              <DialogDescription className="text-zinc-400 pt-2">
+                Are you sure you want to delete <span className="text-white font-medium">&ldquo;{workflow.workflow_name}&rdquo;</span>?
+                This action cannot be undone and all execution history will be lost.
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowDeleteDialog(false)}
                 disabled={isDeleting}
+                className="border-zinc-700 hover:bg-zinc-900"
               >
                 Cancel
               </Button>
@@ -304,6 +335,7 @@ export function WorkflowCard({ workflow, onUpdate }: WorkflowCardProps) {
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={isDeleting}
+                className="bg-red-500/90 hover:bg-red-500"
               >
                 {isDeleting ? (
                   <>
@@ -311,13 +343,13 @@ export function WorkflowCard({ workflow, onUpdate }: WorkflowCardProps) {
                     Deleting...
                   </>
                 ) : (
-                  "Delete"
+                  "Delete Workflow"
                 )}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </Card>
+      </div>
     </TooltipProvider>
   );
 }

@@ -6,7 +6,6 @@ import { useAppInitialization } from "@/hooks";
 import { WorkflowCard } from "@/components/workflow";
 import { Activity, Plus, RefreshCw, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { apiClient } from "@/api/client";
@@ -31,34 +30,47 @@ export default function ActiveWorkflowsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Skeleton loader component for loading state
+  // Skeleton loader component for loading state - matches WorkflowCard design
   const WorkflowCardSkeleton = () => (
-    <Card className="relative overflow-hidden bg-card/50 backdrop-blur-sm">
-      <div className="absolute left-0 top-0 h-full w-1 bg-muted" />
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-48" />
+    <div className="relative overflow-hidden rounded-xl bg-[#0a0a0c] border border-zinc-800/80">
+      {/* Status line skeleton */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-zinc-700/50" />
+
+      <div className="p-5">
+        {/* Header skeleton */}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-5 w-40 bg-zinc-800/80" />
+            <Skeleton className="h-4 w-full bg-zinc-800/50" />
           </div>
-          <Skeleton className="h-5 w-14 rounded-full" />
+          <Skeleton className="h-7 w-20 rounded-full bg-zinc-800/80" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Skeleton className="h-3 w-40" />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-3 w-8" />
-            <Skeleton className="h-3 w-16" />
+
+        {/* Trigger info skeleton */}
+        <div className="rounded-lg p-3 mb-4 bg-zinc-900/80 border border-zinc-800/80">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded-lg bg-zinc-800/80" />
+            <Skeleton className="h-4 w-32 bg-zinc-800/60" />
           </div>
-          <Skeleton className="h-3 w-24" />
         </div>
-        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-          <Skeleton className="h-8 flex-1" />
-          <Skeleton className="h-8 w-8" />
+
+        {/* Stats grid skeleton */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex flex-col gap-2 p-3 rounded-lg bg-zinc-900/60 border border-zinc-800/60">
+              <Skeleton className="h-3 w-12 bg-zinc-800/60" />
+              <Skeleton className="h-5 w-8 bg-zinc-800/80" />
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Actions skeleton */}
+        <div className="flex items-center gap-2 pt-4 border-t border-zinc-800/80">
+          <Skeleton className="h-10 flex-1 rounded-md bg-zinc-800/60" />
+          <Skeleton className="h-10 w-10 rounded-md bg-zinc-800/60" />
+        </div>
+      </div>
+    </div>
   );
 
   const fetchWorkflows = useCallback(async () => {
@@ -67,7 +79,14 @@ export default function ActiveWorkflowsPage() {
     try {
       const result = await apiClient.listWorkflows();
       if (result.success && result.data) {
-        setWorkflows(result.data.workflows);
+        // Check for backend success and workflows array
+        if (result.data.success !== false && Array.isArray(result.data.workflows)) {
+          setWorkflows(result.data.workflows);
+        } else {
+          // Handle backend error response structure
+          const backendError = result.data as unknown as { error?: { message?: string } };
+          setError(backendError.error?.message || "Failed to load workflows");
+        }
       } else {
         setError(result.error?.message || "Failed to load workflows");
       }
@@ -83,7 +102,7 @@ export default function ActiveWorkflowsPage() {
   }, [fetchWorkflows]);
 
   return (
-    <AppLayout sidebar={<Sidebar />} header={<CanvasHeader />}>
+    <AppLayout sidebar={<Sidebar />} header={<CanvasHeader />} canvasVariant="subtle">
       <div className="h-full w-full overflow-auto p-6">
         {/* Page Header */}
         <div className="flex items-center justify-between mb-6">
@@ -116,7 +135,7 @@ export default function ActiveWorkflowsPage() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <WorkflowCardSkeleton key={i} />
             ))}
@@ -129,7 +148,9 @@ export default function ActiveWorkflowsPage() {
               </div>
               <div>
                 <p className="font-medium">Failed to load workflows</p>
-                <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {typeof error === 'string' ? error : 'An error occurred'}
+                </p>
               </div>
               <Button variant="outline" onClick={fetchWorkflows}>
                 Try Again
@@ -163,7 +184,7 @@ export default function ActiveWorkflowsPage() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {workflows.map((workflow) => (
               <WorkflowCard
                 key={workflow.workflow_id}

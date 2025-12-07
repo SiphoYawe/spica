@@ -8,6 +8,8 @@ interface AppLayoutProps {
   sidebar?: React.ReactNode;
   propertiesPanel?: React.ReactNode;
   header?: React.ReactNode;
+  /** Canvas background variant: "default" for workflow canvas, "subtle" for list pages */
+  canvasVariant?: "default" | "subtle";
 }
 
 export function AppLayout({
@@ -15,6 +17,7 @@ export function AppLayout({
   sidebar,
   propertiesPanel,
   header,
+  canvasVariant = "default",
 }: AppLayoutProps) {
   const { sidebarOpen, propertiesPanelOpen } = useUiStore();
 
@@ -42,7 +45,10 @@ export function AppLayout({
         )}
 
         {/* Canvas area */}
-        <main className="relative flex-1 overflow-hidden canvas-bg">
+        <main className={cn(
+          "relative flex-1 overflow-hidden",
+          canvasVariant === "subtle" ? "canvas-bg-subtle" : "canvas-bg"
+        )}>
           {children}
         </main>
       </div>

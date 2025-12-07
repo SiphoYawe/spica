@@ -125,7 +125,7 @@
 
   /* Canvas - The workflow area */
   --canvas: #08080C;
-  --canvas-grid: #1A1A20;
+  --canvas-grid: #3A3A45;
 
   /* Sidebar */
   --sidebar: #0A0A0E;
@@ -262,21 +262,28 @@
    CANVAS & WORKFLOW STYLES
    ============================================ */
 
-/* Canvas background with subtle grid */
+/* Canvas background with dots - Pro workflow editor style */
+/* Default intensity for create/workflow page - slightly more visible */
 .canvas-bg {
+  background-color: var(--canvas);
+  background-image: radial-gradient(circle at center, rgba(58, 58, 69, 0.7) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Subtle variant for active/history pages - lighter grey background, no dots */
+.canvas-bg-subtle {
+  background-color: #121218;
+  background-image: none;
+}
+
+/* Line grid alternative */
+.canvas-grid {
   background-color: var(--canvas);
   background-image:
     linear-gradient(var(--canvas-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
   background-size: 24px 24px;
   background-position: -1px -1px;
-}
-
-/* Dot grid alternative */
-.canvas-dots {
-  background-color: var(--canvas);
-  background-image: radial-gradient(circle at center, var(--canvas-grid) 1px, transparent 1px);
-  background-size: 20px 20px;
 }
 
 /* ReactFlow customizations */
@@ -292,49 +299,64 @@
   filter: drop-shadow(0 0 16px rgba(0, 255, 72, 0.25));
 }
 
-/* Edge styling */
+/* Edge styling - High contrast for dark mode */
 .react-flow__edge-path {
-  stroke: var(--muted-foreground);
-  stroke-width: 2;
+  stroke: #9CA3AF;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 2px rgba(156, 163, 175, 0.4));
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
   stroke: var(--spica);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 72, 0.6));
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #D1D5DB;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 4px rgba(209, 213, 219, 0.5));
 }
 
 .react-flow__edge.animated .react-flow__edge-path {
-  stroke-dasharray: 6 4;
-  animation: edge-flow 0.6s linear infinite;
+  stroke: #00FF48;
+  stroke-width: 2.5;
+  stroke-dasharray: 8 6;
+  animation: edge-flow 0.5s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 72, 0.5));
 }
 
 @keyframes edge-flow {
-  from { stroke-dashoffset: 20; }
+  from { stroke-dashoffset: 28; }
   to { stroke-dashoffset: 0; }
 }
 
-/* Connection line */
+/* Connection line - Bright for visibility */
 .react-flow__connection-line {
   stroke: var(--spica);
-  stroke-width: 2;
-  stroke-dasharray: 6 4;
+  stroke-width: 3;
+  stroke-dasharray: 8 6;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 72, 0.6));
 }
 
-/* Handles */
+/* Handles - Larger and more visible */
 .react-flow__handle {
-  @apply w-3 h-3 rounded-full border-2 transition-all duration-150;
+  @apply w-3.5 h-3.5 rounded-full border-2 transition-all duration-150;
   background: var(--card);
-  border-color: var(--border);
+  border-color: #6B7280;
 }
 
 .react-flow__handle:hover {
   border-color: var(--spica);
-  box-shadow: 0 0 8px rgba(0, 255, 72, 0.4);
+  box-shadow: 0 0 12px rgba(0, 255, 72, 0.5);
+  transform: scale(1.2);
 }
 
 .react-flow__handle.connecting,
 .react-flow__handle.valid {
   border-color: var(--spica);
   background: var(--spica);
+  box-shadow: 0 0 12px rgba(0, 255, 72, 0.6);
 }
 
 /* Controls panel */
@@ -750,4 +772,22 @@
 /* Pro-style panel shadows */
 .workflow-panel {
   @apply bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg;
+}
+
+/* React Flow CSS variable overrides for Pro template consistency */
+.react-flow {
+  --xy-background-pattern-dots-color-default: var(--canvas-grid);
+  --xy-background-pattern-line-color-default: var(--canvas-grid);
+  --xy-background-pattern-cross-color-default: var(--canvas-grid);
+  --xy-node-background-color-default: var(--card);
+  --xy-node-border-default: 1px solid var(--border);
+  --xy-minimap-background-color-default: var(--card);
+  --xy-controls-button-background-color-default: var(--card);
+  --xy-controls-button-background-color-hover-default: var(--accent);
+  --xy-controls-button-border-color-default: var(--border);
+  --xy-edge-stroke-default: var(--muted-foreground);
+  --xy-edge-stroke-selected-default: var(--spica);
+  --xy-connectionline-stroke-default: var(--spica);
+  --xy-handle-background-color-default: var(--card);
+  --xy-handle-border-color-default: var(--border);
 }
