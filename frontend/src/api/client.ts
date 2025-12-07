@@ -579,6 +579,36 @@ class ApiClient {
       gas_used: string | null;
     }>(`/api/v1/executions/${executionId}`);
   }
+
+  /**
+   * Activate workflow from canvas data (create active workflow)
+   */
+  async activateWorkflow(data: {
+    workflow_name: string;
+    workflow_description: string;
+    nodes: Array<{
+      id: string;
+      type: string;
+      position: { x: number; y: number };
+      data: Record<string, unknown>;
+    }>;
+    edges: Array<{
+      id: string;
+      source: string;
+      target: string;
+      animated?: boolean;
+    }>;
+    user_id?: string;
+    user_address?: string;
+  }) {
+    return this.post<{
+      success: boolean;
+      workflow_id: string;
+      workflow_name: string;
+      message: string;
+      timestamp: string;
+    }>('/api/v1/workflows/activate', data);
+  }
 }
 
 // Export singleton instance

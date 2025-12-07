@@ -5,6 +5,7 @@
  * x402 payment interface for workflow deployment
  *
  * Simplified for hackathon demo - always works, no backend dependency
+ * On success, saves the workflow to the backend as an active workflow
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -29,6 +30,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWorkflowStore } from "@/stores";
+import { apiClient } from "@/api/client";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -45,10 +48,15 @@ export default function PaymentModal({
   workflowId,
   workflowName,
   onSuccess,
+  onError,
 }: PaymentModalProps) {
   const [isDeploying, setIsDeploying] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [activatedWorkflowId, setActivatedWorkflowId] = useState<string | null>(null);
+
+  // Get workflow data from store
+  const { nodes, edges, workflowDescription } = useWorkflowStore();
 
   // Reset state when modal closes
   useEffect(() => {
@@ -56,26 +64,74 @@ export default function PaymentModal({
       setIsDeploying(false);
       setIsSuccess(false);
       setCopiedAddress(false);
+      setActivatedWorkflowId(null);
     }
   }, [isOpen]);
 
   // Auto-close on success after delay
   useEffect(() => {
-    if (isSuccess) {
+    if (isSuccess && activatedWorkflowId) {
       const timer = setTimeout(() => {
-        onSuccess?.(workflowId);
+        onSuccess?.(activatedWorkflowId);
         onClose();
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isSuccess, workflowId, onSuccess, onClose]);
+  }, [isSuccess, activatedWorkflowId, onSuccess, onClose]);
 
   const handleDeploy = async () => {
     setIsDeploying(true);
-    // Simulate deployment
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSuccess(true);
-    setIsDeploying(false);
+
+    try {
+      // First simulate payment processing
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Then activate the workflow on the backend
+      const name = workflowName || `Workflow ${workflowId?.slice(0, 8) || "New"}`;
+
+      // Prepare nodes for API (convert to expected format)
+      const apiNodes = nodes.map((node) => ({
+        id: node.id,
+        type: node.type || "unknown",
+        position: {
+          x: node.position?.x || 0,
+          y: node.position?.y || 0,
+        },
+        data: node.data || {},
+      }));
+
+      // Prepare edges for API
+      const apiEdges = edges.map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        animated: true,
+      }));
+
+      const result = await apiClient.activateWorkflow({
+        workflow_name: name,
+        workflow_description: workflowDescription || `Automated DeFi workflow: ${name}`,
+        nodes: apiNodes,
+        edges: apiEdges,
+      });
+
+      if (result.success && result.data?.workflow_id) {
+        setActivatedWorkflowId(result.data.workflow_id);
+        setIsSuccess(true);
+      } else {
+        // Even if API fails, show success for demo purposes
+        console.warn("API activation failed, using demo mode:", result.error);
+        setActivatedWorkflowId(workflowId || `wf_demo_${Date.now()}`);
+        setIsSuccess(true);
+      }
+    } catch (error) {
+      console.error("Deploy error:", error);
+      // Fallback to demo mode on error
+      setActivatedWorkflowId(workflowId || `wf_demo_${Date.now()}`);
+      setIsSuccess(true);
+    } finally {
+      setIsDeploying(false);
+    }
   };
 
   const copyAddress = useCallback((address: string) => {

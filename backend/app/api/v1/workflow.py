@@ -1461,3 +1461,212 @@ async def get_workflow_executions(
                 "timestamp": datetime.now(UTC).isoformat()
             }
         )
+
+
+# ============================================================================
+# Activate Workflow from Canvas - Hackathon Demo
+# ============================================================================
+
+class ActivateCanvasNode(BaseModel):
+    """Canvas node data"""
+    id: str
+    type: str
+    position: Dict[str, float]
+    data: Dict[str, Any]
+
+
+class ActivateCanvasEdge(BaseModel):
+    """Canvas edge data"""
+    id: str
+    source: str
+    target: str
+    animated: Optional[bool] = True
+
+
+class ActivateWorkflowRequest(BaseModel):
+    """Request to activate a workflow from canvas data"""
+    workflow_name: str = Field(..., description="Workflow name")
+    workflow_description: str = Field("", description="Workflow description")
+    nodes: List[ActivateCanvasNode] = Field(..., description="Canvas nodes")
+    edges: List[ActivateCanvasEdge] = Field(..., description="Canvas edges")
+    user_id: str = Field("demo_user", description="User ID")
+    user_address: str = Field("NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM", description="User wallet address")
+
+
+class ActivateWorkflowResponse(BaseModel):
+    """Response after activating workflow"""
+    success: bool = Field(True)
+    workflow_id: str
+    workflow_name: str
+    message: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+@router.post(
+    "/workflows/activate",
+    response_model=ActivateWorkflowResponse,
+    summary="Activate workflow from canvas",
+    description="Create an active workflow from canvas nodes and edges (demo endpoint)",
+    tags=["workflow"]
+)
+async def activate_workflow_from_canvas(
+    request: ActivateWorkflowRequest
+) -> ActivateWorkflowResponse:
+    """
+    Create an active workflow from canvas data.
+
+    This is a hackathon demo endpoint that takes the canvas state
+    and creates an active workflow entry that appears on the
+    active workflows page.
+
+    Args:
+        request: Canvas data with nodes, edges, and metadata
+
+    Returns:
+        ActivateWorkflowResponse with workflow ID
+    """
+    logger.info(f"Activating workflow from canvas: {request.workflow_name}")
+
+    try:
+        from app.models.graph_models import (
+            AssembledGraph,
+            ReactFlowGraph,
+            GraphNode,
+            GraphEdge,
+            NodePosition,
+            StoredWorkflow,
+        )
+        from app.models.workflow_models import WorkflowSpec, TriggerSpec
+
+        # Generate workflow ID
+        workflow_id = f"wf_{uuid.uuid4().hex[:12]}"
+
+        # Convert canvas nodes to GraphNodes
+        graph_nodes = []
+        trigger_node = None
+        for node in request.nodes:
+            pos = NodePosition(
+                x=int(node.position.get("x", 0)),
+                y=int(node.position.get("y", 0))
+            )
+            graph_node = GraphNode(
+                id=node.id,
+                type=node.type,
+                label=node.data.get("label", node.type.capitalize()),
+                parameters=node.data,
+                position=pos,
+                data=node.data
+            )
+            graph_nodes.append(graph_node)
+            if node.type == "trigger":
+                trigger_node = node
+
+        # Convert canvas edges to GraphEdges
+        graph_edges = [
+            GraphEdge(
+                id=edge.id,
+                source=edge.source,
+                target=edge.target,
+                type="default",
+                animated=edge.animated if edge.animated is not None else True
+            )
+            for edge in request.edges
+        ]
+
+        # Create ReactFlowGraph
+        react_flow = ReactFlowGraph(nodes=graph_nodes, edges=graph_edges)
+
+        # Determine trigger type from nodes
+        trigger_type = "time"
+        trigger_params = {"schedule": "daily at 9am"}
+        if trigger_node:
+            trigger_type = trigger_node.data.get("type", "time")
+            trigger_params = {k: v for k, v in trigger_node.data.items() if k != "label"}
+
+        # Create minimal WorkflowSpec
+        workflow_spec = WorkflowSpec(
+            intent=request.workflow_description or request.workflow_name,
+            name=request.workflow_name,
+            trigger=TriggerSpec(type=trigger_type, **trigger_params),
+            steps=[]
+        )
+
+        # Create state graph config
+        state_graph_config = {
+            "trigger": {
+                "type": trigger_type,
+                "params": trigger_params
+            },
+            "steps": [],
+            "node_count": len(graph_nodes),
+            "initial_state": {
+                "workflow_id": workflow_id,
+                "trigger_type": trigger_type,
+                "trigger_params": trigger_params,
+                "current_step": 0,
+                "total_steps": len(graph_nodes) - 1,
+                "completed_steps": [],
+                "step_results": [],
+                "workflow_status": "pending",
+                "error": None,
+                "metadata": {
+                    "workflow_name": request.workflow_name,
+                    "created_at": datetime.now(UTC).isoformat()
+                }
+            }
+        }
+
+        # Create AssembledGraph
+        assembled = AssembledGraph(
+            workflow_id=workflow_id,
+            workflow_name=request.workflow_name,
+            workflow_description=request.workflow_description or f"Workflow created from canvas",
+            workflow_spec=workflow_spec,
+            react_flow=react_flow,
+            state_graph_config=state_graph_config
+        )
+
+        # Create StoredWorkflow
+        stored = StoredWorkflow(
+            workflow_id=workflow_id,
+            user_id=request.user_id,
+            user_address=request.user_address,
+            assembled_graph=assembled,
+            status="active",
+            enabled=True,
+            trigger_count=0,
+            execution_count=0
+        )
+
+        # Save to storage
+        storage = get_workflow_storage()
+        file_path = storage.storage_dir / f"{workflow_id}.json"
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(stored.model_dump_json(indent=2))
+
+        logger.info(f"Successfully activated workflow: {workflow_id}")
+
+        return ActivateWorkflowResponse(
+            success=True,
+            workflow_id=workflow_id,
+            workflow_name=request.workflow_name,
+            message="Workflow activated successfully"
+        )
+
+    except Exception as e:
+        error_id = str(uuid.uuid4())[:8]
+        logger.error(f"Failed to activate workflow [error_id={error_id}]: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "Failed to activate workflow",
+                    "details": f"Error ID: {error_id}",
+                    "retry": True
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
