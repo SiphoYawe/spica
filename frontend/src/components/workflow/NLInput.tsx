@@ -22,16 +22,16 @@ import { apiClient } from "@/api/client";
 import ParseErrorDisplay from "@/components/ParseErrorDisplay";
 import type { ParseErrorResponse } from "@/types/api";
 
-// Example workflow prompts - showcasing full Spica capabilities with complex real-world use cases
+// Example workflow prompts - simple, reliable examples that parse correctly
 const examplePrompts = [
-  // Multi-step DCA strategy with swap + stake
-  "Every Monday at 9am, swap 25% of my GAS to NEO and stake all of it",
-  // Price-triggered profit taking with multi-step
-  "When NEO rises above $25, swap 50% of my NEO to GAS and transfer 100 GAS to NKuyBkoGdZZSLyPbJEetheRhMjezqzTxPo",
-  // Complex time-based portfolio rebalancing
-  "Every day at midnight, swap 10% of my bNEO to GAS, then stake 75% of my remaining bNEO",
-  // Price-triggered accumulation strategy
-  "If GAS drops below $3, swap 500 GAS to bNEO and stake 100% of my bNEO",
+  // Simple time-based swap
+  "Every Monday at 9am, swap 10 GAS to NEO",
+  // Price trigger with swap
+  "When NEO rises above $20, swap 50% of my NEO to GAS",
+  // Daily staking
+  "Every day at 9am, stake 25% of my NEO",
+  // Price-triggered accumulation
+  "When GAS drops below $5, swap 100 GAS to NEO",
 ];
 
 export function NLInput() {
