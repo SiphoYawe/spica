@@ -1,0 +1,75 @@
+{
+  "execution_id": "exec_dca_002",
+  "workflow_id": "wf_buy_the_dip",
+  "workflow_name": "Smart DCA with Dip Buying",
+  "user_address": "NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM",
+  "trigger_type": "price",
+  "started_at": "2025-12-01T14:22:00+00:00",
+  "completed_at": "2025-12-01T14:22:45+00:00",
+  "status": "completed",
+  "step_results": [
+    {
+      "action_type": "check_price",
+      "status": "completed",
+      "result": {
+        "token": "GAS",
+        "price_usd": 2.72,
+        "threshold": 3.00,
+        "condition_met": true
+      }
+    },
+    {
+      "action_type": "swap",
+      "status": "completed",
+      "tx_hash": "0x7da1c9b7f5e3d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5",
+      "result": {
+        "from_token": "USDT",
+        "to_token": "GAS",
+        "amount": 200,
+        "received": 73.53,
+        "dex": "Flamingo",
+        "slippage": 0.38
+      }
+    },
+    {
+      "action_type": "stake",
+      "status": "completed",
+      "tx_hash": "0x8eb2dac8a6f4e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6",
+      "result": {
+        "token": "GAS",
+        "amount": 44.12,
+        "percentage": "60%",
+        "pool": "Flamingo"
+      }
+    },
+    {
+      "action_type": "liquidity",
+      "status": "completed",
+      "tx_hash": "0x9fc3ebd9b7a5f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7",
+      "result": {
+        "token": "GAS",
+        "amount": 29.41,
+        "percentage": "40%",
+        "pool": "GAS/NEO",
+        "dex": "Flamingo"
+      }
+    },
+    {
+      "action_type": "transfer",
+      "status": "completed",
+      "tx_hash": "0xa0d4fceac8b6a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8",
+      "result": {
+        "token": "GAS",
+        "amount": 0.001,
+        "to_address": "NActivityLogger456...",
+        "memo": "Dip bought successfully"
+      }
+    }
+  ],
+  "error": null,
+  "metadata": {
+    "trigger_price": 2.72,
+    "gas_used": "0.298",
+    "network": "neo-testnet"
+  }
+}

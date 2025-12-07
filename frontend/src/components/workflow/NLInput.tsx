@@ -207,8 +207,8 @@ export function NLInput() {
         <div
           className={cn(
             "relative rounded-xl border transition-all duration-200",
-            "bg-zinc-900/50 border-zinc-800/60",
-            "hover:border-zinc-700/80",
+            "bg-zinc-800 border-zinc-700/60",
+            "hover:border-zinc-600/80",
             "focus-within:border-spica/40 focus-within:shadow-[0_0_20px_rgba(0,255,72,0.08)]"
           )}
         >

@@ -1,0 +1,11 @@
+{
+  "workflow_id": "wf_buy_the_dip",
+  "workflow_name": "Smart DCA with Dip Buying",
+  "execution_ids": [
+    "exec_dca_001",
+    "exec_dca_002",
+    "exec_dca_003"
+  ],
+  "total_executions": 3,
+  "last_execution": "2025-12-05T16:42:00+00:00"
+}

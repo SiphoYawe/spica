@@ -1,0 +1,32 @@
+{
+  "execution_id": "exec_dca_003",
+  "workflow_id": "wf_buy_the_dip",
+  "workflow_name": "Smart DCA with Dip Buying",
+  "user_address": "NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM",
+  "trigger_type": "price",
+  "started_at": "2025-11-28T08:15:00+00:00",
+  "completed_at": null,
+  "status": "failed",
+  "step_results": [
+    {
+      "action_type": "check_price",
+      "status": "completed",
+      "result": {
+        "token": "GAS",
+        "price_usd": 2.91,
+        "threshold": 3.00,
+        "condition_met": true
+      }
+    },
+    {
+      "action_type": "swap",
+      "status": "failed",
+      "error": "Insufficient USDT balance for swap"
+    }
+  ],
+  "error": "Insufficient USDT balance for swap",
+  "metadata": {
+    "trigger_price": 2.91,
+    "network": "neo-testnet"
+  }
+}

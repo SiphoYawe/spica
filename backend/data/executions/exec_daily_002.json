@@ -1,0 +1,68 @@
+{
+  "execution_id": "exec_daily_002",
+  "workflow_id": "wf_daily_gas_stake",
+  "workflow_name": "Daily DeFi Optimizer",
+  "user_address": "NRNdUkU78B9NShjNbEyBLS8cgZUeS2vKgM",
+  "trigger_type": "schedule",
+  "started_at": "2025-12-06T09:00:00+00:00",
+  "completed_at": "2025-12-06T09:00:38+00:00",
+  "status": "completed",
+  "step_results": [
+    {
+      "action_type": "claim",
+      "status": "completed",
+      "result": {
+        "token": "FLM",
+        "amount_claimed": 118.20,
+        "pool": "Flamingo"
+      }
+    },
+    {
+      "action_type": "swap",
+      "status": "completed",
+      "tx_hash": "0xb1a9f7e5d3c2b1a0f9e8d7c6b5a4e3d2c1b0a9f8e7d6c5b4a3e2d1c0b9a8f7e6d5",
+      "result": {
+        "from_token": "FLM",
+        "to_token": "USDT",
+        "amount": 59.10,
+        "received": 29.55
+      }
+    },
+    {
+      "action_type": "swap",
+      "status": "completed",
+      "tx_hash": "0xc2b0f8e6d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9e8d7c6b5a4e3d2c1b0a9f8e7d6",
+      "result": {
+        "from_token": "FLM",
+        "to_token": "GAS",
+        "amount": 59.10,
+        "received": 11.82
+      }
+    },
+    {
+      "action_type": "stake",
+      "status": "completed",
+      "tx_hash": "0xd3c1a9f7e5d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9e8d7c6b5a4e3d2c1b0a9f8e7",
+      "result": {
+        "token": "GAS",
+        "amount": 11.82,
+        "pool": "Flamingo"
+      }
+    },
+    {
+      "action_type": "transfer",
+      "status": "completed",
+      "tx_hash": "0xe4d2b0f8e6d5c4b3a2f1e0d9c8b7a6e5d4c3b2a1f0e9d8c7b6a5e4d3c2b1a0f9e8",
+      "result": {
+        "token": "USDT",
+        "amount": 29.55,
+        "to_address": "NSavingsWallet123..."
+      }
+    }
+  ],
+  "error": null,
+  "metadata": {
+    "gas_used": "0.238",
+    "network": "neo-testnet"
+  }
+}

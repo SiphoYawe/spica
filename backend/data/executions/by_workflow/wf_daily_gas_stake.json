@@ -1,0 +1,11 @@
+{
+  "workflow_id": "wf_daily_gas_stake",
+  "workflow_name": "Daily DeFi Optimizer",
+  "execution_ids": [
+    "exec_daily_001",
+    "exec_daily_002",
+    "exec_daily_003"
+  ],
+  "total_executions": 3,
+  "last_execution": "2025-12-07T09:00:00+00:00"
+}
