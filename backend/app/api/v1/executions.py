@@ -54,7 +54,7 @@ class ExecutionListResponse(BaseModel):
 # Endpoints
 # ============================================================================
 
-@router.get("/", response_model=ExecutionListResponse)
+@router.get("", response_model=ExecutionListResponse)
 async def list_executions(
     workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
     status: Optional[str] = Query(None, description="Filter by status"),

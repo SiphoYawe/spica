@@ -80,8 +80,27 @@ def get_parser() -> WorkflowParserAgent:
     Get or create the workflow parser agent instance.
 
     Uses a thread-safe singleton pattern to avoid recreating the agent on each request.
+    Raises HTTPException if spoon_ai is not available.
     """
     global _parser_instance
+
+    # Check if spoon_ai is available
+    if not SPOON_AI_AVAILABLE or create_workflow_parser is None:
+        logger.error("Parser unavailable: spoon_ai package not installed")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "PARSER_UNAVAILABLE",
+                    "message": "AI parser service is temporarily unavailable",
+                    "details": "The spoon_ai package is not properly configured. Please check server logs.",
+                    "retry": True
+                },
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        )
+
     if _parser_instance is None:
         with _parser_lock:
             if _parser_instance is None:
