@@ -92,3 +92,8 @@ Thumbs.db
 
 # Markdown files - all docs moved to /docs folder
 *.md
+
+# Text files - docs moved to /docs folder (except requirements.txt)
+*.txt
+!requirements.txt
+!**/requirements.txt
