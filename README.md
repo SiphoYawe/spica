@@ -137,68 +137,6 @@ npm run dev
 
 Frontend will be available at http://localhost:3000
 
-## Project Structure
-
-```
-spica/
-├── frontend/              # Next.js 16 + TypeScript frontend
-│   ├── src/
-│   │   ├── app/           # Next.js App Router pages
-│   │   │   ├── layout.tsx # Root layout with providers
-│   │   │   ├── page.tsx   # Main workflow builder page
-│   │   │   └── globals.css# Tailwind CSS styles
-│   │   ├── components/
-│   │   │   ├── layout/    # App layout components
-│   │   │   ├── ui/        # shadcn/ui components
-│   │   │   └── workflow/  # Workflow-specific components
-│   │   ├── stores/        # Zustand state stores
-│   │   ├── api/           # API client
-│   │   ├── hooks/         # Custom React hooks
-│   │   └── lib/           # Utility functions
-│   ├── Dockerfile         # Frontend container
-│   └── package.json
-│
-├── backend/               # FastAPI + SpoonOS backend
-│   ├── app/
-│   │   ├── main.py        # FastAPI application
-│   │   ├── config.py      # Configuration
-│   │   ├── api/           # API routes
-│   │   ├── agents/        # SpoonOS agents
-│   │   ├── services/      # Business logic
-│   │   ├── models/        # Data models
-│   │   └── utils/         # Utilities
-│   ├── tests/             # Backend test suite
-│   ├── Dockerfile         # Backend container
-│   └── requirements.txt
-│
-├── spoon-core/            # SpoonOS framework (bundled)
-├── spoon-toolkit/         # SpoonOS toolkits (bundled)
-│
-├── docker-compose.yml     # Multi-container orchestration
-├── .env.example           # Environment variables template
-└── README.md              # This file
-```
-
-## Getting Testnet Tokens
-
-### Neo N3 Testnet (GAS & NEO)
-
-1. Visit https://neoxwish.ngd.network/
-2. Create or import a wallet
-3. Request GAS and NEO tokens
-4. Export your private key in WIF format for `DEMO_WALLET_WIF`
-
-### Base Sepolia (ETH)
-
-1. Visit https://www.alchemy.com/faucets/base-sepolia
-2. Enter your Ethereum address
-3. Receive testnet ETH for gas fees
-
-### Base Sepolia USDC (for x402 payments)
-
-- Use a Base Sepolia faucet or bridge to get testnet USDC
-- Needed to pay for workflow deployments via x402
-
 ## API Documentation
 
 Once the backend is running, visit:
@@ -252,44 +190,6 @@ curl -X POST http://localhost:8000/api/workflows/workflow_123/deploy \
   -H "X-PAYMENT: {payment_proof}"
 ```
 
-## Testing
-
-### Backend Tests
-
-```bash
-cd backend
-
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app --cov-report=html
-
-# Run specific test file
-pytest tests/test_parser.py -v
-```
-
-### Frontend
-
-```bash
-cd frontend
-
-# Run linting
-npm run lint
-
-# Build for production
-npm run build
-```
-
-### Environment Variables for Production
-
-Update `.env` with production values:
-
-- Use **mainnet** RPC endpoints (when ready)
-- Secure API keys using secrets management
-- Enable HTTPS and proper CORS origins
-- Set `DEBUG=false`
-
 ## Contributing
 
 This is a hackathon project. Contributions welcome!
@@ -299,10 +199,6 @@ This is a hackathon project. Contributions welcome!
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## License
-
-MIT License - See LICENSE file for details
 
 ## Support
 
