@@ -70,7 +70,6 @@ backend/workflows/
 # Allow demo workflow files but ignore user-created ones
 backend/data/workflows/*
 !backend/data/workflows/.gitkeep
-!backend/data/workflows/README.md
 !backend/data/workflows/wf_*.json
 backend/*.log
 
@@ -90,3 +89,6 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+
+# Markdown files - all docs moved to /docs folder
+*.md
