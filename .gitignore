@@ -92,6 +92,7 @@ Thumbs.db
 
 # Markdown files - all docs moved to /docs folder
 *.md
+!README.md
 
 # Text files - docs moved to /docs folder (except requirements.txt)
 *.txt
